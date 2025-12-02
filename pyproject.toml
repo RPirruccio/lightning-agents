@@ -9,6 +9,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
     "httpx>=0.27.0",
+    "python-pptx>=1.0.0",
 ]
 
 [project.scripts]
@@ -23,9 +24,6 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "ruff>=0.4.0",
-]
-presentation = [
-    "python-pptx>=1.0.0",
 ]
 
 [tool.ruff]

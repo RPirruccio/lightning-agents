@@ -1,11 +1,23 @@
 """
 Generate PowerPoint presentation for Lightning Agents talk.
 
-Usage:
-    uv sync --extra presentation
-    uv run python -m presentation.generate_slides
+Usage via agent:
+    lightning run presentation_slide_writer "List slides"
+    lightning run presentation_slide_writer "Add a slide about X"
+    lightning run presentation_slide_writer "Generate the presentation"
+
+The agent uses MCP tools: list_slides, add_slide, update_slide, delete_slide, generate_pptx
+
+Outputs both PPTX and PDF (PDF requires LibreOffice, PowerPoint, or Keynote).
+
+Supports simple markup in bullet text:
+    **bold text** - renders as bold (primary blue)
+    `code text`   - renders as monospace (secondary orange)
 """
 
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 from pptx import Presentation
@@ -16,6 +28,74 @@ from pptx.enum.shapes import MSO_SHAPE
 
 from .slide_content import SLIDES, DIAGRAMS
 from .styles import COLORS, FONTS, SIZES, DIMS
+
+
+# Regex patterns for markup parsing
+MARKUP_PATTERN = re.compile(r'(\*\*[^*]+\*\*|`[^`]+`)')
+
+
+def parse_markup(text: str) -> list[tuple[str, str]]:
+    """Parse text with **bold** and `code` markup into segments.
+
+    Returns list of (text, style) tuples where style is:
+        'normal' - regular text
+        'bold'   - bold text
+        'code'   - monospace with highlight
+    """
+    segments = []
+    last_end = 0
+
+    for match in MARKUP_PATTERN.finditer(text):
+        # Add any text before this match as normal
+        if match.start() > last_end:
+            segments.append((text[last_end:match.start()], 'normal'))
+
+        matched = match.group()
+        if matched.startswith('**') and matched.endswith('**'):
+            # Bold text
+            segments.append((matched[2:-2], 'bold'))
+        elif matched.startswith('`') and matched.endswith('`'):
+            # Code text
+            segments.append((matched[1:-1], 'code'))
+
+        last_end = match.end()
+
+    # Add remaining text after last match
+    if last_end < len(text):
+        segments.append((text[last_end:], 'normal'))
+
+    # If no matches, return whole text as normal
+    if not segments:
+        segments.append((text, 'normal'))
+
+    return segments
+
+
+def add_rich_text(paragraph, text: str, base_size: int = SIZES["body"]) -> None:
+    """Add text with markup to a paragraph using multiple runs."""
+    segments = parse_markup(text)
+
+    for i, (segment_text, style) in enumerate(segments):
+        if i == 0:
+            run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+        else:
+            run = paragraph.add_run()
+
+        run.text = segment_text
+
+        if style == 'bold':
+            run.font.bold = True
+            run.font.color.rgb = rgb("primary")
+            run.font.name = FONTS["body"]
+            run.font.size = Pt(base_size)
+        elif style == 'code':
+            run.font.name = FONTS["code"]
+            run.font.size = Pt(base_size - 2)
+            run.font.color.rgb = rgb("secondary")
+        else:
+            run.font.name = FONTS["body"]
+            run.font.size = Pt(base_size)
+            run.font.color.rgb = rgb("text_dark")
 
 
 def rgb(color_key: str) -> RGBColor:
@@ -83,7 +163,7 @@ def add_title_slide(prs: Presentation, data: dict) -> None:
 
 
 def add_bullet_slide(prs: Presentation, data: dict) -> None:
-    """Add a slide with bullet points."""
+    """Add a slide with bullet points. Supports **bold** and `code` markup."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank
     add_slide_title(slide, data["title"])
 
@@ -97,12 +177,16 @@ def add_bullet_slide(prs: Presentation, data: dict) -> None:
 
     for i, bullet in enumerate(data["bullets"]):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = f"  {bullet}"
-        p.font.size = Pt(SIZES["body"])
-        p.font.color.rgb = rgb("text_dark")
-        p.font.name = FONTS["body"]
         p.space_before = Pt(16)
         p.level = 0
+
+        # Add bullet character then rich text
+        bullet_run = p.add_run()
+        bullet_run.text = "• "
+        bullet_run.font.size = Pt(SIZES["body"])
+        bullet_run.font.color.rgb = rgb("secondary")
+
+        add_rich_text(p, bullet, SIZES["body"])
 
 
 def add_code_slide(prs: Presentation, data: dict) -> None:
@@ -287,7 +371,7 @@ def add_closing_slide(prs: Presentation, data: dict) -> None:
     tf.paragraphs[0].font.name = FONTS["title"]
     tf.paragraphs[0].alignment = PP_ALIGN.CENTER
 
-    # Bullets (centered)
+    # Bullets (centered) - supports **bold** and `code` markup
     bullet_box = slide.shapes.add_textbox(
         Inches(2), Inches(3.0),
         Inches(DIMS["width"] - 4), Inches(3)
@@ -296,12 +380,9 @@ def add_closing_slide(prs: Presentation, data: dict) -> None:
 
     for i, bullet in enumerate(data["bullets"]):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = bullet
-        p.font.size = Pt(SIZES["body"])
-        p.font.color.rgb = rgb("text_dark")
-        p.font.name = FONTS["body"]
         p.space_before = Pt(16)
         p.alignment = PP_ALIGN.CENTER
+        add_rich_text(p, bullet, SIZES["body"])
 
     # Footer
     if "footer" in data:
@@ -315,6 +396,83 @@ def add_closing_slide(prs: Presentation, data: dict) -> None:
         tf.paragraphs[0].font.color.rgb = rgb("secondary")
         tf.paragraphs[0].font.name = FONTS["body"]
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+
+def convert_to_pdf(pptx_path: Path) -> Path | None:
+    """Convert PPTX to PDF using available tools.
+
+    Tries in order:
+    1. LibreOffice (cross-platform)
+    2. Keynote via AppleScript (macOS only)
+
+    Returns PDF path on success, None on failure.
+    """
+    output_dir = pptx_path.parent
+    pdf_path = output_dir / pptx_path.stem.replace(".pptx", "")
+    pdf_path = output_dir / f"{pptx_path.stem}.pdf"
+
+    # Try LibreOffice first (works on all platforms)
+    soffice_paths = [
+        "soffice",  # If in PATH
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",  # macOS
+        "/usr/bin/soffice",  # Linux
+    ]
+
+    for soffice in soffice_paths:
+        try:
+            result = subprocess.run(
+                [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(output_dir), str(pptx_path)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            if result.returncode == 0 and pdf_path.exists():
+                return pdf_path
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+
+    # Try Microsoft PowerPoint on macOS
+    if sys.platform == "darwin":
+        applescript_ppt = f'''
+        tell application "Microsoft PowerPoint"
+            open POSIX file "{pptx_path}"
+            save active presentation in POSIX file "{pdf_path}" as save as PDF
+            close active presentation
+        end tell
+        '''
+        try:
+            result = subprocess.run(
+                ["osascript", "-e", applescript_ppt],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            if result.returncode == 0 and pdf_path.exists():
+                return pdf_path
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+        # Try Keynote on macOS
+        applescript_keynote = f'''
+        tell application "Keynote"
+            set theDoc to open POSIX file "{pptx_path}"
+            export theDoc to POSIX file "{pdf_path}" as PDF
+            close theDoc
+        end tell
+        '''
+        try:
+            result = subprocess.run(
+                ["osascript", "-e", applescript_keynote],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            if result.returncode == 0 and pdf_path.exists():
+                return pdf_path
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+    return None
 
 
 def create_presentation() -> Path:
@@ -339,13 +497,20 @@ def create_presentation() -> Path:
         elif slide_type == "closing":
             add_closing_slide(prs, slide_data)
 
-    # Save
+    # Save PPTX
     output_dir = Path(__file__).parent / "output"
     output_dir.mkdir(exist_ok=True)
     output_path = output_dir / "lightning-agents.pptx"
     prs.save(output_path)
+    print(f"PPTX saved to: {output_path}")
 
-    print(f"Presentation saved to: {output_path}")
+    # Convert to PDF
+    pdf_path = convert_to_pdf(output_path)
+    if pdf_path:
+        print(f"PDF saved to: {pdf_path}")
+    else:
+        print("PDF conversion skipped (install LibreOffice or use Keynote on macOS)")
+
     return output_path
 
 

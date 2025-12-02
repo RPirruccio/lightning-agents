@@ -16,10 +16,10 @@ SLIDES = [
         "type": "bullets",
         "title": "The Problem",
         "bullets": [
-            "Hardcoded system prompts scattered across files",
-            "Tightly coupled agent definitions and execution logic",
-            "No standardized way to add new agents without code changes",
-            "Manual configuration duplication when agents share patterns",
+            "**Hardcoded** system prompts scattered across files",
+            "**Tightly coupled** agent definitions and execution logic",
+            "No standardized way to add agents **without code changes**",
+            "Manual **configuration duplication** when agents share patterns",
         ],
     },
     {
@@ -63,12 +63,12 @@ SLIDES = [
     },
     {
         "type": "bullets",
-        "title": "Runtime Context Injection",
+        "title": "The Voyager Insight",
         "bullets": [
-            "Same definition, different contexts",
-            "Inject parameters at instantiation time",
-            "agent.prompt merges base + runtime context",
-            "Enables agent reusability across use cases",
+            "**Voyager**: Minecraft AI with a growing **skill library**",
+            "Learns new skills → **stores them** → reuses them",
+            "**Lightning Agents**: same pattern for AI agents",
+            "`architect` creates → `Registry` stores → `CLI` runs",
         ],
     },
     {
@@ -78,44 +78,44 @@ SLIDES = [
     },
     {
         "type": "bullets",
-        "title": "Demo Flow",
+        "title": "But Wait... Tool Architect Too",
         "bullets": [
-            "lightning list → Show available agents",
-            "lightning run lab_finder \"RAG tutorials\" → Use existing agent",
-            "lightning architect \"meeting summarizer\" → Create NEW agent",
-            "lightning list → New agent now available!",
-            "lightning run meeting_summarizer \"...\" → Use it immediately",
-        ],
-    },
-    {
-        "type": "bullets",
-        "title": "Key Hypotheses",
-        "bullets": [
-            "H1: Declarative > Imperative for agent configuration",
-            "H2: Runtime context injection enables reusability",
-            "H3: Architect agents enable organic system growth",
+            "Agents can also design **NEW TOOLS**",
+            "`tool_architect` registers definitions in `db/tools.json`",
+            "`paper_researcher` searches papers **AND** downloads PDFs",
+            "`presentation_slide_writer` manipulates slides **directly**",
         ],
     },
     {
         "type": "code",
-        "title": "Live Demo",
+        "title": "Demo: What We Built",
         "code": '''$ lightning list
-  architect, aimug_researcher, lab_finder...
+  10 agents: architect, tool_architect, paper_researcher...
 
-$ lightning architect "PR reviewer for security"
+$ lightning run paper_researcher "Find the Voyager paper"
+  Found: arxiv.org/abs/2305.16291
+  Downloaded: voyager_lifelong_learning.pdf
 
-Created agent: security_reviewer
-Saved to: agents.json
-
-$ lightning run security_reviewer "Review auth.py"''',
+$ lightning run presentation_slide_writer "List slides"
+  12 slides in current presentation...''',
+    },
+    {
+        "type": "bullets",
+        "title": "The Meta Moment",
+        "bullets": [
+            "We used `paper_researcher` to find the **Voyager paper**",
+            "Voyager inspired the **architect pattern**",
+            "We built `tool_architect` to create **more tools**",
+            "`presentation_slide_writer` is building **THIS presentation**",
+        ],
     },
     {
         "type": "closing",
         "title": "Lightning Agents",
         "bullets": [
-            "github.com/[your-repo]/lightning-agents",
-            "Built with Claude Agent SDK",
-            "Questions?",
+            "**Agents** creating **agents** creating **tools**",
+            "Built with `Claude Agent SDK` + `MCP`",
+            "`github.com/aimug-org/lightning-agents`",
         ],
         "footer": "Austin AI MUG | aimug.org",
     },

@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "schema": "lightning-agents/db/tools",
+    "created_at": "2024-12-01T00:00:00Z",
+    "updated_at": "2024-12-01T00:00:00Z"
+  },
+  "tools": {
+    "download_pdf": {
+      "name": "Download PDF",
+      "description": "Download a PDF from a URL and save it to the downloads folder",
+      "module": "lightning_agents.tools.download_pdf",
+      "function": "download_pdf",
+      "parameters": {
+        "url": {"type": "string", "description": "URL of the PDF to download", "required": true},
+        "filename": {"type": "string", "description": "Optional filename for the downloaded PDF", "required": false}
+      },
+      "mcp_server": "custom-tools",
+      "created_at": "2024-12-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    "generate_pptx": {
+      "name": "Generate PPTX",
+      "description": "Generate PowerPoint presentation and PDF from current slides",
+      "module": "lightning_agents.tools.presentation",
+      "function": "generate_pptx",
+      "parameters": {},
+      "mcp_server": "custom-tools",
+      "created_at": "2024-12-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    "list_slides": {
+      "name": "List Slides",
+      "description": "List all slides with their titles and types",
+      "module": "lightning_agents.tools.presentation",
+      "function": "list_slides",
+      "parameters": {},
+      "mcp_server": "custom-tools",
+      "created_at": "2024-12-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    "add_slide": {
+      "name": "Add Slide",
+      "description": "Add a new slide at a specific position",
+      "module": "lightning_agents.tools.presentation",
+      "function": "add_slide",
+      "parameters": {
+        "position": {"type": "integer", "description": "Index to insert at (0=first, -1=last)", "required": true},
+        "slide_type": {"type": "string", "description": "One of: title, bullets, code, code_comparison, diagram, closing", "required": true},
+        "title": {"type": "string", "description": "Slide title", "required": true},
+        "content": {"type": "object", "description": "Additional fields based on slide type", "required": false}
+      },
+      "mcp_server": "custom-tools",
+      "created_at": "2024-12-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    "update_slide": {
+      "name": "Update Slide",
+      "description": "Update an existing slide by index",
+      "module": "lightning_agents.tools.presentation",
+      "function": "update_slide",
+      "parameters": {
+        "index": {"type": "integer", "description": "Slide index (0-based)", "required": true},
+        "updates": {"type": "object", "description": "Dict of fields to update", "required": true}
+      },
+      "mcp_server": "custom-tools",
+      "created_at": "2024-12-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    },
+    "delete_slide": {
+      "name": "Delete Slide",
+      "description": "Delete a slide by index",
+      "module": "lightning_agents.tools.presentation",
+      "function": "delete_slide",
+      "parameters": {
+        "index": {"type": "integer", "description": "Slide index (0-based)", "required": true}
+      },
+      "mcp_server": "custom-tools",
+      "created_at": "2024-12-01T00:00:00Z",
+      "updated_at": "2024-12-01T00:00:00Z"
+    }
+  }
+}

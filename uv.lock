@@ -278,6 +278,7 @@ dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "python-pptx" },
 ]
 
 [package.optional-dependencies]
@@ -285,9 +286,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
-]
-presentation = [
-    { name = "python-pptx" },
 ]
 
 [package.metadata]
@@ -298,10 +296,10 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "python-pptx", marker = "extra == 'presentation'", specifier = ">=1.0.0" },
+    { name = "python-pptx", specifier = ">=1.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
 ]
-provides-extras = ["dev", "presentation"]
+provides-extras = ["dev"]
 
 [[package]]
 name = "lxml"

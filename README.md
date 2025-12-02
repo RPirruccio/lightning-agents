@@ -95,16 +95,18 @@ lightning run meeting_summarizer "Summarize: [transcript]"
 
 ## 🤖 Available Agents
 
-| Agent | Description | Model |
-|-------|-------------|-------|
-| `basic_helper` | General Q&A assistant | haiku |
-| `research_assistant` | Structured research summaries | sonnet |
-| `python_doc_writer` | Python function documentation | haiku |
-| `architect` | 🏗️ Designs new agent definitions | sonnet |
-| `aimug_researcher` | Searches AIMUG content (GitHub, docs, YouTube) | sonnet |
-| `lab_finder` | Finds AIMUG labs by topic | haiku |
-| `git_commit_writer` | ✍️ Writes conventional commit messages | haiku |
-| `presentation_slide_writer` | 🎨 Generates slide Python code | sonnet |
+| Agent | Description | Model | Tools |
+|-------|-------------|-------|-------|
+| `basic_helper` | General Q&A assistant | haiku | - |
+| `research_assistant` | Structured research summaries | sonnet | web_search |
+| `python_doc_writer` | Python function documentation | haiku | - |
+| `architect` | 🏗️ Designs new agent definitions (Voyager-style) | sonnet | db_agents (CRUD) |
+| `tool_architect` | 🔧 Designs new custom tools | sonnet | db_tools (CRUD) |
+| `aimug_researcher` | Searches AIMUG content (GitHub, docs, YouTube) | sonnet | web_search, url_read |
+| `lab_finder` | Finds AIMUG labs by topic | haiku | web_search |
+| `git_commit_writer` | ✍️ Writes conventional commit messages | haiku | - |
+| `presentation_slide_writer` | 🎨 Creates and manages PPTX presentations | sonnet | slides (CRUD), generate_pptx, Read, Bash |
+| `paper_researcher` | 📄 Researches papers, downloads PDFs | sonnet | web_search, url_read, download_pdf |
 
 ---
 
@@ -149,6 +151,19 @@ This enables **self-expanding agent systems** where the AI itself designs specia
 
 ---
 
+## 🎮 Voyager Inspiration
+
+This project draws inspiration from [Voyager](https://arxiv.org/abs/2305.16291), an AI agent that plays Minecraft by building a **skill library** that grows over time. Instead of hardcoded behaviors, Voyager learns new skills and stores them for reuse.
+
+Lightning Agents applies this concept to agent systems:
+- **Skill Library → Agent Registry**: Agents stored as reusable definitions
+- **Learning New Skills → Architect Agent**: Creates new agents on demand
+- **Tool Acquisition → Tool Architect**: Creates new tools when needed
+
+The result: a system that **grows organically** based on actual needs, not pre-planned capabilities.
+
+---
+
 ## 🧪 Hypotheses
 
 ### H1: Declarative > Imperative for Agent Configuration
@@ -171,38 +186,49 @@ lightning-agents/
 ├── pyproject.toml
 ├── README.md
 ├── CLAUDE.md                 # Developer notes
+├── db/                       # Data (decoupled from source)
+│   ├── agents.json           # Agent blueprints
+│   └── tools.json            # Custom tool definitions
 ├── src/lightning_agents/     # Main package
 │   ├── __init__.py
-│   ├── agents.json           # Agent blueprints
 │   ├── cli.py                # CLI entry point
 │   ├── runner.py             # Agent execution with MCP
 │   ├── registry.py           # Factory-of-Factories pattern
 │   ├── agent_factory.py      # Definition → Instance
-│   └── mcp_config.py         # MCP server configs
+│   ├── mcp_config.py         # MCP server configs
+│   └── tools/                # Custom MCP tools
+│       ├── download_pdf.py   # PDF download tool
+│       ├── db_agents.py      # Agent CRUD operations
+│       ├── db_tools.py       # Tool CRUD operations
+│       └── presentation.py   # Slide manipulation tools
 └── presentation/             # PPTX slide generator
     ├── generate_slides.py
     ├── slide_content.py
     ├── styles.py
     └── output/
-        ├── lightning-agents.pptx
-        └── lightning-agents.pdf
+        └── lightning-agents.pptx
 ```
 
 ---
 
 ## 🎨 Generating Slides
 
+Use the `presentation_slide_writer` agent to manage slides:
+
 ```bash
-# Install presentation deps
-uv sync --extra presentation
+# List current slides
+lightning run presentation_slide_writer "List the slides"
 
-# Generate PPTX
-uv run python -m presentation.generate_slides
+# Add a new slide
+lightning run presentation_slide_writer "Add a bullets slide about MCP integration"
 
-# Output: presentation/output/lightning-agents.pptx
+# Generate PPTX and PDF
+lightning run presentation_slide_writer "Generate the presentation"
+
+# Output: presentation/output/lightning-agents.pptx + .pdf
 ```
 
-Edit `presentation/slide_content.py` to update content, then regenerate.
+Edit `presentation/slide_content.py` directly for bulk changes. Supports `**bold**` and `` `code` `` markup.
 
 ---
 
@@ -220,8 +246,19 @@ SEARXNG_URL=http://localhost:8888
 ### MCP Tools
 
 Agents can use MCP tools by declaring them in their `tools` array:
+
+**SearXNG (Web Search):**
 - `mcp__searxng__searxng_web_search` - Web search
 - `mcp__searxng__web_url_read` - Read web page content
+
+**Custom Tools (Built-in MCP Server):**
+- `mcp__custom-tools__download_pdf` - Download PDFs from URLs
+- `mcp__custom-tools__db_list_agents` / `db_get_agent` / `db_create_agent` / `db_update_agent` / `db_delete_agent` - Agent CRUD
+- `mcp__custom-tools__db_list_tools` / `db_get_tool` / `db_create_tool` / `db_update_tool` / `db_delete_tool` - Tool CRUD
+- `mcp__custom-tools__list_slides` / `add_slide` / `update_slide` / `delete_slide` / `generate_pptx` - Presentation management
+
+**SDK Primitives:**
+Agents can also use built-in Claude SDK tools: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `WebFetch`, `WebSearch`
 
 ---
 

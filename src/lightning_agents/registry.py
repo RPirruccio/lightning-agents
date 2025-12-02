@@ -2,7 +2,7 @@
 Agent Registry - Load definitions, build factories, instantiate agents.
 
 The registry is the "factory of factories":
-- Loads agent blueprints from JSON
+- Loads agent blueprints from JSON (default: db/agents.json)
 - Builds factory functions for each
 - Provides a unified interface for agent creation
 """
@@ -12,6 +12,12 @@ from pathlib import Path
 from typing import Any
 
 from .agent_factory import AgentDefinition, AgentFactory, AgentInstance, build_factory
+
+
+def get_default_db_path() -> Path:
+    """Get the default path to db/agents.json."""
+    # Navigate from src/lightning_agents/ to project root db/
+    return Path(__file__).parent.parent.parent / "db" / "agents.json"
 
 
 class AgentRegistry:

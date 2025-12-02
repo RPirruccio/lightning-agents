@@ -7,7 +7,11 @@ Dynamic agent instantiation using the Factory-of-Factories pattern.
 Usage:
     lightning list                          List all available agents
     lightning run <agent> "<prompt>"        Run an agent with a prompt
-    lightning architect "<task>"            Create a new agent definition
+    lightning architect "<task>"            Create a new agent (uses CRUD tools)
+    lightning db list-agents                List agents in database
+    lightning db list-tools                 List tools in database
+    lightning db get-agent <id>             Get agent details
+    lightning db get-tool <id>              Get tool details
 """
 
 import argparse
@@ -16,14 +20,15 @@ import json
 import sys
 from pathlib import Path
 
-from .registry import AgentRegistry
+from .registry import AgentRegistry, get_default_db_path
 from .agent_factory import AgentDefinition
 from .runner import run_agent_by_id
+from .tools.db_utils import get_agents_db_path, get_tools_db_path, read_json_db
 
 
 def get_agents_path() -> Path:
-    """Get path to agents.json (same directory as this script)."""
-    return Path(__file__).parent / "agents.json"
+    """Get path to db/agents.json (in project root db/ directory)."""
+    return get_default_db_path()
 
 
 def cmd_list(registry: AgentRegistry) -> None:
@@ -59,61 +64,83 @@ async def cmd_run(registry: AgentRegistry, agent_id: str, prompt: str) -> None:
 
 
 async def cmd_architect(registry: AgentRegistry, task: str) -> None:
-    """Use architect agent to create a new agent definition."""
-    agents_path = get_agents_path()
+    """Use architect agent to create a new agent definition.
 
+    The architect now uses CRUD tools to persist agents directly.
+    No JSON parsing needed - it calls db_create_agent internally.
+    """
     print(f"\nArchitect creating agent for: {task}")
     print("-" * 60)
 
-    # Run architect agent (no streaming - need full JSON)
-    response = await run_agent_by_id(
+    # Run architect agent with streaming
+    # It will use db_create_agent tool to persist the agent
+    await run_agent_by_id(
         registry,
         "architect",
         f"Create an agent for: {task}",
-        stream=False,
+        stream=True,
     )
 
-    # Parse JSON response
-    try:
-        text = response.strip()
-        # Handle potential markdown code blocks
-        if text.startswith("```"):
-            lines = text.split("\n")
-            # Remove first line (```json) and last line (```)
-            text = "\n".join(lines[1:-1])
 
-        new_agent = json.loads(text.strip())
-    except json.JSONDecodeError as e:
-        print(f"\nError: Failed to parse architect response as JSON")
-        print(f"Parse error: {e}")
-        print(f"\nRaw response:\n{response}")
+def cmd_db_list_agents() -> None:
+    """List all agents in the database."""
+    db = read_json_db(get_agents_db_path())
+    agents = db.get("agents", {})
+
+    print(f"\nAgents in database ({len(agents)} total):\n")
+    for agent_id, data in agents.items():
+        model = data.get("model", "?")
+        tools_count = len(data.get("tools", []))
+        print(f"  {agent_id}")
+        print(f"    {data.get('description', 'No description')}")
+        print(f"    [{model}] tools: {tools_count}")
+        print()
+
+
+def cmd_db_list_tools() -> None:
+    """List all tools in the database."""
+    db = read_json_db(get_tools_db_path())
+    tools = db.get("tools", {})
+
+    print(f"\nTools in database ({len(tools)} total):\n")
+    for tool_id, data in tools.items():
+        mcp_server = data.get("mcp_server", "custom-tools")
+        print(f"  {tool_id}")
+        print(f"    {data.get('description', 'No description')}")
+        print(f"    MCP: mcp__{mcp_server}__{tool_id}")
+        print()
+
+
+def cmd_db_get_agent(agent_id: str) -> None:
+    """Get full details of an agent."""
+    db = read_json_db(get_agents_db_path())
+    agents = db.get("agents", {})
+
+    if agent_id not in agents:
+        print(f"Error: Agent '{agent_id}' not found.")
+        print(f"Available: {', '.join(agents.keys())}")
         sys.exit(1)
 
-    # Validate required fields
-    required = {"id", "name", "description", "system_prompt", "model", "tools"}
-    missing = required - set(new_agent.keys())
-    if missing:
-        print(f"\nError: Missing required fields: {missing}")
-        print(f"\nResponse was:\n{json.dumps(new_agent, indent=2)}")
+    agent = agents[agent_id]
+    print(f"\nAgent: {agent_id}")
+    print("-" * 60)
+    print(json.dumps(agent, indent=2))
+
+
+def cmd_db_get_tool(tool_id: str) -> None:
+    """Get full details of a tool."""
+    db = read_json_db(get_tools_db_path())
+    tools = db.get("tools", {})
+
+    if tool_id not in tools:
+        print(f"Error: Tool '{tool_id}' not found.")
+        print(f"Available: {', '.join(tools.keys())}")
         sys.exit(1)
 
-    # Register and save
-    agent_id = new_agent.pop("id")
-
-    # Check if agent already exists
-    if agent_id in registry.list_agents():
-        print(f"\nWarning: Agent '{agent_id}' already exists. Overwriting.")
-
-    definition = AgentDefinition.from_dict(new_agent)
-    registry.register(agent_id, definition)
-    registry.save_json(agents_path)
-
-    print(f"\nCreated agent: {agent_id}")
-    print(f"  Name: {definition.name}")
-    print(f"  Model: {definition.model}")
-    print(f"  Tools: {definition.tools or 'none'}")
-    print(f"\nSaved to: {agents_path}")
-    print(f"\nRun it with: lightning run {agent_id} \"<prompt>\"")
+    tool = tools[tool_id]
+    print(f"\nTool: {tool_id}")
+    print("-" * 60)
+    print(json.dumps(tool, indent=2))
 
 
 def main():
@@ -126,6 +153,8 @@ Examples:
   lightning run basic_helper "What is the factory pattern?"
   lightning run aimug_researcher "What RAG tutorials does AIMUG have?"
   lightning architect "code reviewer for Python security issues"
+  lightning db list-agents
+  lightning db get-agent architect
         """,
     )
 
@@ -141,13 +170,43 @@ Examples:
 
     # architect command
     arch_parser = subparsers.add_parser(
-        "architect", help="Create a new agent definition"
+        "architect", help="Create a new agent definition (uses CRUD tools)"
     )
     arch_parser.add_argument("task", help="Task description for the new agent")
 
+    # db command with subcommands
+    db_parser = subparsers.add_parser("db", help="Database operations")
+    db_subparsers = db_parser.add_subparsers(dest="db_command", required=True)
+
+    # db list-agents
+    db_subparsers.add_parser("list-agents", help="List all agents in database")
+
+    # db list-tools
+    db_subparsers.add_parser("list-tools", help="List all tools in database")
+
+    # db get-agent
+    db_get_agent = db_subparsers.add_parser("get-agent", help="Get agent details")
+    db_get_agent.add_argument("agent_id", help="Agent ID to get")
+
+    # db get-tool
+    db_get_tool = db_subparsers.add_parser("get-tool", help="Get tool details")
+    db_get_tool.add_argument("tool_id", help="Tool ID to get")
+
     args = parser.parse_args()
 
-    # Load registry
+    # Handle db commands (don't need registry)
+    if args.command == "db":
+        if args.db_command == "list-agents":
+            cmd_db_list_agents()
+        elif args.db_command == "list-tools":
+            cmd_db_list_tools()
+        elif args.db_command == "get-agent":
+            cmd_db_get_agent(args.agent_id)
+        elif args.db_command == "get-tool":
+            cmd_db_get_tool(args.tool_id)
+        return
+
+    # Load registry for other commands
     agents_path = get_agents_path()
     if not agents_path.exists():
         print(f"Error: agents.json not found at {agents_path}")
