@@ -12,5 +12,5 @@ wheels/
 # Environment variables (keep .env.example, ignore actual .env)
 .env
 
-# Presentation output
-presentation/output/
+# macOS
+.DS_Store
