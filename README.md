@@ -1,37 +1,37 @@
-# Lightning Agents
+# ⚡ Lightning Agents ⚡
 
 **Dynamic agent instantiation using the Factory-of-Factories pattern with Claude Agent SDK.**
 
-Built for the [Austin AI MUG](https://aimug.org) Lightning Talk.
+Built for the [Austin AI MUG](https://aimug.org) Lightning Talk. 🎤
 
 ---
 
-## What is Lightning Agents?
+## 🤔 What is Lightning Agents?
 
 Lightning Agents demonstrates a pattern for dynamically loading, instantiating, and even *generating* AI agents from declarative JSON definitions. Instead of hardcoding agent configurations, you define blueprints that get transformed into factory functions at runtime.
 
-## The Problem
+## 😤 The Problem
 
 Building AI agents typically involves:
-- Hardcoded system prompts scattered across files
-- Tightly coupled agent definitions and execution logic
-- No standardized way to add new agents without code changes
-- Manual configuration duplication when agents share patterns
+- 📁 Hardcoded system prompts scattered across files
+- 🔗 Tightly coupled agent definitions and execution logic
+- 🚫 No standardized way to add new agents without code changes
+- 📋 Manual configuration duplication when agents share patterns
 
-## The Solution
+## ⚡ The Solution
 
 **Factory-of-Factories**: A registry that loads agent definitions from JSON, builds factory functions for each, and provides a unified interface for instantiation with runtime context injection.
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │ Definition  │ ──▶ │   Factory   │ ──▶ │  Registry   │ ──▶ │  Instance   │
-│   (JSON)    │     │  (Callable) │     │  (Unified)  │     │  (Ready)    │
+│   (JSON)    │     │  (Callable) │     │  (Unified)  │     │   (Ready)   │
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # Clone and setup
@@ -54,9 +54,9 @@ lightning architect "code reviewer for Python security"
 
 ---
 
-## CLI Commands
+## 💻 CLI Commands
 
-### List Agents
+### ⚡ List Agents
 
 ```bash
 lightning list
@@ -64,7 +64,7 @@ lightning list
 
 Shows all available agents with descriptions and model info.
 
-### Run Agent
+### ⚡ Run Agent
 
 ```bash
 lightning run <agent_id> "<prompt>"
@@ -77,7 +77,7 @@ lightning run aimug_researcher "What RAG tutorials does AIMUG have?"
 lightning run lab_finder "Find labs about LangGraph"
 ```
 
-### Create New Agent
+### ⚡ Create New Agent
 
 ```bash
 lightning architect "<task description>"
@@ -93,20 +93,22 @@ lightning run meeting_summarizer "Summarize: [transcript]"
 
 ---
 
-## Available Agents
+## 🤖 Available Agents
 
 | Agent | Description | Model |
 |-------|-------------|-------|
 | `basic_helper` | General Q&A assistant | haiku |
 | `research_assistant` | Structured research summaries | sonnet |
 | `python_doc_writer` | Python function documentation | haiku |
-| `architect` | Designs new agent definitions | sonnet |
+| `architect` | 🏗️ Designs new agent definitions | sonnet |
 | `aimug_researcher` | Searches AIMUG content (GitHub, docs, YouTube) | sonnet |
 | `lab_finder` | Finds AIMUG labs by topic | haiku |
+| `git_commit_writer` | ✍️ Writes conventional commit messages | haiku |
+| `presentation_slide_writer` | 🎨 Generates slide Python code | sonnet |
 
 ---
 
-## Factory vs Factory-of-Factories
+## 🏭 Factory vs Factory-of-Factories
 
 ### Simple Factory
 ```python
@@ -114,7 +116,7 @@ def create_agent(config):
     return Agent(config)
 ```
 
-### Factory-of-Factories (This Project)
+### Factory-of-Factories (This Project) ⚡
 ```python
 # Definition → Factory → Registry → Instance
 registry = AgentRegistry.from_json("agents.json")  # Builds ALL factories
@@ -125,7 +127,7 @@ The registry *is* the factory-of-factories — it produces factory functions fro
 
 ---
 
-## Architect Agents
+## 🏗️ Architect Agents
 
 The "Architect Agent" pattern: **an agent that generates new agent definitions**.
 
@@ -143,11 +145,11 @@ lightning list
 lightning run security_reviewer "Review this auth code..."
 ```
 
-This enables self-expanding agent systems where the AI itself designs specialized agents for new tasks.
+This enables **self-expanding agent systems** where the AI itself designs specialized agents for new tasks. 🤯
 
 ---
 
-## Hypotheses
+## 🧪 Hypotheses
 
 ### H1: Declarative > Imperative for Agent Configuration
 JSON definitions separate *what* an agent is from *how* it runs. Easier to version, diff, and review.
@@ -160,7 +162,7 @@ Instead of manually writing every agent definition, let Claude design agents for
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 lightning-agents/
@@ -171,7 +173,7 @@ lightning-agents/
 ├── CLAUDE.md                 # Developer notes
 ├── src/lightning_agents/     # Main package
 │   ├── __init__.py
-│   ├── agents.json           # Agent blueprints (6 agents)
+│   ├── agents.json           # Agent blueprints
 │   ├── cli.py                # CLI entry point
 │   ├── runner.py             # Agent execution with MCP
 │   ├── registry.py           # Factory-of-Factories pattern
@@ -180,12 +182,15 @@ lightning-agents/
 └── presentation/             # PPTX slide generator
     ├── generate_slides.py
     ├── slide_content.py
-    └── styles.py
+    ├── styles.py
+    └── output/
+        ├── lightning-agents.pptx
+        └── lightning-agents.pdf
 ```
 
 ---
 
-## Generating Slides
+## 🎨 Generating Slides
 
 ```bash
 # Install presentation deps
@@ -201,7 +206,7 @@ Edit `presentation/slide_content.py` to update content, then regenerate.
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 ### Environment Variables
 
@@ -220,7 +225,7 @@ Agents can use MCP tools by declaring them in their `tools` array:
 
 ---
 
-## Requirements
+## 📋 Requirements
 
 - Python 3.13+
 - `uv` package manager
@@ -228,10 +233,12 @@ Agents can use MCP tools by declaring them in their `tools` array:
 
 ---
 
-## License
+## 📄 License
 
 MIT
 
 ---
 
-*Built for the Austin AI MUG lightning talk on dynamic agent instantiation patterns.*
+⚡ *Built for the Austin AI MUG lightning talk on dynamic agent instantiation patterns.* ⚡
+
+**Agents creating agents creating agents...** 🤖➡️🤖➡️🤖
