@@ -10,7 +10,7 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
-from pptx.dml.color import RgbColor
+from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
@@ -18,10 +18,10 @@ from .slide_content import SLIDES, DIAGRAMS
 from .styles import COLORS, FONTS, SIZES, DIMS
 
 
-def rgb(color_key: str) -> RgbColor:
-    """Convert color key to RgbColor."""
+def rgb(color_key: str) -> RGBColor:
+    """Convert color key to RGBColor."""
     hex_color = COLORS.get(color_key, color_key)
-    return RgbColor.from_string(hex_color)
+    return RGBColor.from_string(hex_color)
 
 
 def add_slide_title(slide, title_text: str) -> None:
