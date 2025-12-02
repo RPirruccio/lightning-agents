@@ -14,3 +14,6 @@ wheels/
 
 # macOS
 .DS_Store
+
+# Downloaded papers
+downloads/
