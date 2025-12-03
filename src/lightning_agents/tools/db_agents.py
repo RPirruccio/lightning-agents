@@ -83,7 +83,17 @@ async def db_get_agent(args: dict) -> dict:
 )
 async def db_create_agent(args: dict) -> dict:
     """Create a new agent definition."""
+    import json as json_module
+
     agent_id = args["agent_id"]
+
+    # Parse tools - SDK sends list as JSON string due to MCP schema bug
+    tools = args.get("tools", [])
+    if isinstance(tools, str):
+        try:
+            tools = json_module.loads(tools)
+        except json_module.JSONDecodeError:
+            tools = []
 
     # Build agent data from args
     agent_data = {
@@ -91,7 +101,7 @@ async def db_create_agent(args: dict) -> dict:
         "description": args["description"],
         "system_prompt": args["system_prompt"],
         "model": args["model"],
-        "tools": args.get("tools", []),
+        "tools": tools,
     }
 
     # Validate
@@ -144,6 +154,8 @@ async def db_create_agent(args: dict) -> dict:
 )
 async def db_update_agent(args: dict) -> dict:
     """Update an existing agent definition."""
+    import json as json_module
+
     agent_id = args["agent_id"]
 
     # Read current DB
@@ -171,7 +183,14 @@ async def db_update_agent(args: dict) -> dict:
     if "model" in args:
         existing["model"] = args["model"]
     if "tools" in args:
-        existing["tools"] = args["tools"]
+        # Parse tools - SDK sends list as JSON string due to MCP schema bug
+        tools = args["tools"]
+        if isinstance(tools, str):
+            try:
+                tools = json_module.loads(tools)
+            except json_module.JSONDecodeError:
+                tools = []
+        existing["tools"] = tools
 
     # Validate
     is_valid, error = validate_agent_definition(existing)

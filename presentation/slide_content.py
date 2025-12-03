@@ -8,19 +8,57 @@ Run `uv run python -m presentation.generate_slides` to regenerate.
 SLIDES = [
     {
         "type": "title",
-        "title": "Lightning Agents",
+        "title": "⚡ Lightning Agents ⚡",
         "subtitle": "Factory-of-Factories for Dynamic AI Agents",
-        "footer": "Austin AI MUG Lightning Talk",
+        "presenter": "Ricardo Pirruccio",
+        "footer": "github.com/RPirruccio/lightning-agents | aimug.org",
     },
     {
-        "type": "bullets",
+        "type": "before_after",
         "title": "The Problem",
-        "bullets": [
-            "**Hardcoded** system prompts scattered across files",
-            "**Tightly coupled** agent definitions and execution logic",
-            "No standardized way to add agents **without code changes**",
-            "Manual **configuration duplication** when agents share patterns",
+        "before_title": "TYPICAL AGENT CODE",
+        "before_items": [
+            "agent_v1.py, agent_v2.py, agent_final.py...",
+            "Hardcoded prompts in every file",
+            "Copy-paste to create new agents",
+            "Change model name in 47 places",
+            "No single source of truth",
         ],
+        "after_title": "FACTORY-OF-FACTORIES",
+        "after_items": [
+            "One agents.json file",
+            "Declarative definitions",
+            "Registry builds factories",
+            "Runtime context injection",
+            "Agents create new agents",
+        ],
+    },
+    {
+        "type": "comparison",
+        "title": "The Voyager Insight",
+        "left_header": "VOYAGER (2023)",
+        "left_color": "text_light",
+        "right_header": "LIGHTNING AGENTS",
+        "right_color": "secondary",
+        "rows": [
+            ("Learns new skill", "Creates new agent"),
+            ("Stores in skill library", "Stores in agents.json"),
+            ("Retrieves when needed", "Registry.create()"),
+            ("Skills compound over time", "Agents create agents"),
+        ],
+        "footer": "SAME PATTERN. DIFFERENT DOMAIN.",
+    },
+    {
+        "type": "convergence",
+        "title": "The Industry Agrees",
+        "sources": [
+            {"label": "Voyager (2023)", "image": "voyager.png"},
+            {"label": "LangGraph", "image": "langgraph.png"},
+            {"label": "Deep Agents", "image": "deep_agents.png"},
+            {"label": "Claude Agent SDK", "image": "claude_sdk.png"},
+        ],
+        "target": "Factory-of-Factories",
+        "footer": "Everyone's arriving at the same place: less code, more context engineering",
     },
     {
         "type": "diagram",
@@ -44,7 +82,11 @@ SLIDES = [
     "description": "Designs new agents",
     "system_prompt": "You are an Agent Architect...",
     "model": "sonnet",
-    "tools": []
+    "tools": [
+      "mcp__custom-tools__db_create_agent",
+      "mcp__custom-tools__db_list_agents",
+      "mcp__custom-tools__run_agent"
+    ]
   }
 }''',
     },
@@ -60,15 +102,10 @@ SLIDES = [
 
     def register(id, defn) -> None:
         # Add new agent to registry''',
-    },
-    {
-        "type": "bullets",
-        "title": "The Voyager Insight",
         "bullets": [
-            "**Voyager**: Minecraft AI with a growing **skill library**",
-            "Learns new skills → **stores them** → reuses them",
-            "**Lightning Agents**: same pattern for AI agents",
-            "`architect` creates → `Registry` stores → `CLI` runs",
+            "**Single source of truth** for all agent definitions",
+            "**Runtime creation** - agents spawn new agents on demand",
+            "**Self-modifying** - architects can register new agents",
         ],
     },
     {
@@ -78,7 +115,7 @@ SLIDES = [
     },
     {
         "type": "bullets",
-        "title": "But Wait... Tool Architect Too",
+        "title": "Introducing: The Tool Architect",
         "bullets": [
             "Agents can also design **NEW TOOLS**",
             "`tool_architect` registers definitions in `db/tools.json`",
@@ -106,18 +143,20 @@ $ lightning run presentation_slide_writer "List slides"
             "We used `paper_researcher` to find the **Voyager paper**",
             "Voyager inspired the **architect pattern**",
             "We built `tool_architect` to create **more tools**",
-            "`presentation_slide_writer` is building **THIS presentation**",
+            "`presentation_slide_writer` built **THIS presentation**",
+            "**This slide** was created by an agent that was created by an agent",
         ],
     },
     {
         "type": "closing",
-        "title": "Lightning Agents",
+        "title": "⚡ Lightning Agents ⚡",
         "bullets": [
+            "**Questions?**",
             "**Agents** creating **agents** creating **tools**",
             "Built with `Claude Agent SDK` + `MCP`",
-            "`github.com/aimug-org/lightning-agents`",
+            "`github.com/aimug-org/austin_langchain`",
         ],
-        "footer": "Austin AI MUG | aimug.org",
+        "footer": "github.com/RPirruccio/lightning-agents | aimug.org",
     },
 ]
 

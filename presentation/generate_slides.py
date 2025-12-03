@@ -148,6 +148,19 @@ def add_title_slide(prs: Presentation, data: dict) -> None:
         tf.paragraphs[0].font.name = FONTS["body"]
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER
 
+    # Presenter name
+    if "presenter" in data:
+        presenter_box = slide.shapes.add_textbox(
+            Inches(0.5), Inches(5.2),
+            Inches(DIMS["width"] - 1), Inches(0.6)
+        )
+        tf = presenter_box.text_frame
+        tf.paragraphs[0].text = data["presenter"]
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.color.rgb = rgb("text_dark")
+        tf.paragraphs[0].font.name = FONTS["body"]
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
     # Footer
     if "footer" in data:
         footer_box = slide.shapes.add_textbox(
@@ -190,15 +203,20 @@ def add_bullet_slide(prs: Presentation, data: dict) -> None:
 
 
 def add_code_slide(prs: Presentation, data: dict) -> None:
-    """Add a slide with a code block."""
+    """Add a slide with a code block. Optionally includes bullets below."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     add_slide_title(slide, data["title"])
+
+    # Adjust heights based on whether we have bullets
+    has_bullets = "bullets" in data and data["bullets"]
+    code_box_height = 3.6 if has_bullets else 5.4
+    code_text_height = 3.2 if has_bullets else 5.0
 
     # Code box background
     code_bg = slide.shapes.add_shape(
         MSO_SHAPE.ROUNDED_RECTANGLE,
         Inches(0.8), Inches(1.6),
-        Inches(DIMS["width"] - 1.6), Inches(5.4)
+        Inches(DIMS["width"] - 1.6), Inches(code_box_height)
     )
     code_bg.fill.solid()
     code_bg.fill.fore_color.rgb = rgb("code_bg")
@@ -207,7 +225,7 @@ def add_code_slide(prs: Presentation, data: dict) -> None:
     # Code text
     code_box = slide.shapes.add_textbox(
         Inches(1.0), Inches(1.8),
-        Inches(DIMS["width"] - 2), Inches(5)
+        Inches(DIMS["width"] - 2), Inches(code_text_height)
     )
     tf = code_box.text_frame
     tf.word_wrap = False
@@ -219,6 +237,28 @@ def add_code_slide(prs: Presentation, data: dict) -> None:
         p.font.name = FONTS["code"]
         p.font.size = Pt(SIZES["code"])
         p.font.color.rgb = rgb("text_dark")
+
+    # Optional bullets below code
+    if has_bullets:
+        bullet_box = slide.shapes.add_textbox(
+            Inches(1), Inches(5.4),
+            Inches(DIMS["width"] - 2), Inches(1.8)
+        )
+        tf = bullet_box.text_frame
+        tf.word_wrap = True
+
+        for i, bullet in enumerate(data["bullets"]):
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.space_before = Pt(8)
+            p.level = 0
+
+            # Add bullet character then rich text
+            bullet_run = p.add_run()
+            bullet_run.text = "• "
+            bullet_run.font.size = Pt(SIZES["body"] - 2)
+            bullet_run.font.color.rgb = rgb("secondary")
+
+            add_rich_text(p, bullet, SIZES["body"] - 2)
 
 
 def add_code_comparison_slide(prs: Presentation, data: dict) -> None:
@@ -352,6 +392,380 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
         arrow.fill.solid()
         arrow.fill.fore_color.rgb = rgb("text_light")
         arrow.line.fill.background()
+
+
+def add_quote_slide(prs: Presentation, data: dict) -> None:
+    """Add a slide with a big centered quote and attribution."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+    # Quote text (big, centered)
+    quote_box = slide.shapes.add_textbox(
+        Inches(1.5), Inches(2.0),
+        Inches(DIMS["width"] - 3), Inches(3)
+    )
+    tf = quote_box.text_frame
+    tf.word_wrap = True
+
+    # Opening quote mark
+    p = tf.paragraphs[0]
+    p.text = f'"{data["quote"]}"'
+    p.font.size = Pt(36)
+    p.font.italic = True
+    p.font.color.rgb = rgb("text_dark")
+    p.font.name = FONTS["body"]
+    p.alignment = PP_ALIGN.CENTER
+
+    # Attribution
+    if "attribution" in data:
+        attr_box = slide.shapes.add_textbox(
+            Inches(1.5), Inches(5.0),
+            Inches(DIMS["width"] - 3), Inches(1)
+        )
+        tf = attr_box.text_frame
+        tf.paragraphs[0].text = f"— {data['attribution']}"
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.color.rgb = rgb("secondary")
+        tf.paragraphs[0].font.name = FONTS["body"]
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+
+def add_comparison_slide(prs: Presentation, data: dict) -> None:
+    """Add a slide with a side-by-side comparison table."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    add_slide_title(slide, data["title"])
+
+    half_width = (DIMS["width"] - 1.5) / 2
+    header_height = 0.8
+    row_height = 0.7
+    start_y = 1.8
+
+    # Left column header
+    left_header = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.5), Inches(start_y),
+        Inches(half_width), Inches(header_height)
+    )
+    left_header.fill.solid()
+    left_header.fill.fore_color.rgb = rgb(data.get("left_color", "text_light"))
+    left_header.line.fill.background()
+    tf = left_header.text_frame
+    tf.paragraphs[0].text = data["left_header"]
+    tf.paragraphs[0].font.size = Pt(SIZES["body"])
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = rgb("white")
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf.anchor = MSO_ANCHOR.MIDDLE
+
+    # Right column header
+    right_x = 0.5 + half_width + 0.5
+    right_header = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(right_x), Inches(start_y),
+        Inches(half_width), Inches(header_height)
+    )
+    right_header.fill.solid()
+    right_header.fill.fore_color.rgb = rgb(data.get("right_color", "secondary"))
+    right_header.line.fill.background()
+    tf = right_header.text_frame
+    tf.paragraphs[0].text = data["right_header"]
+    tf.paragraphs[0].font.size = Pt(SIZES["body"])
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = rgb("white")
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf.anchor = MSO_ANCHOR.MIDDLE
+
+    # Rows with alternating backgrounds
+    row_y = start_y + header_height + 0.1
+    for i, (left_text, right_text) in enumerate(data["rows"]):
+        # Row background (alternating light gray)
+        if i % 2 == 0:
+            left_bg = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(0.5), Inches(row_y),
+                Inches(half_width), Inches(row_height)
+            )
+            left_bg.fill.solid()
+            left_bg.fill.fore_color.rgb = rgb("code_bg")
+            left_bg.line.fill.background()
+
+            right_bg = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(right_x), Inches(row_y),
+                Inches(half_width), Inches(row_height)
+            )
+            right_bg.fill.solid()
+            right_bg.fill.fore_color.rgb = rgb("code_bg")
+            right_bg.line.fill.background()
+
+        # Left cell text
+        left_cell = slide.shapes.add_textbox(
+            Inches(0.5), Inches(row_y + 0.15),
+            Inches(half_width), Inches(row_height - 0.3)
+        )
+        tf = left_cell.text_frame
+        tf.paragraphs[0].text = left_text
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.color.rgb = rgb("text_dark")
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+        # Right cell text
+        right_cell = slide.shapes.add_textbox(
+            Inches(right_x), Inches(row_y + 0.15),
+            Inches(half_width), Inches(row_height - 0.3)
+        )
+        tf = right_cell.text_frame
+        tf.paragraphs[0].text = right_text
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.color.rgb = rgb("text_dark")
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+        row_y += row_height
+
+    # Footer tagline
+    if "footer" in data:
+        footer_box = slide.shapes.add_textbox(
+            Inches(0.5), Inches(6.2),
+            Inches(DIMS["width"] - 1), Inches(0.8)
+        )
+        tf = footer_box.text_frame
+        tf.paragraphs[0].text = data["footer"]
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.bold = True
+        tf.paragraphs[0].font.color.rgb = rgb("primary")
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+
+def add_before_after_slide(prs: Presentation, data: dict) -> None:
+    """Add a slide with before/after split comparison."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    add_slide_title(slide, data["title"])
+
+    half_width = (DIMS["width"] - 1.5) / 2
+    box_top = 1.8
+    box_height = 4.8
+
+    # BEFORE side (left, red accent)
+    before_bg = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.5), Inches(box_top),
+        Inches(half_width), Inches(box_height)
+    )
+    before_bg.fill.solid()
+    before_bg.fill.fore_color.rgb = rgb("code_bg")
+    before_bg.line.color.rgb = rgb("danger")
+    before_bg.line.width = Pt(3)
+
+    # Before header
+    before_header = slide.shapes.add_textbox(
+        Inches(0.5), Inches(box_top + 0.2),
+        Inches(half_width), Inches(0.6)
+    )
+    tf = before_header.text_frame
+    tf.paragraphs[0].text = data.get("before_title", "BEFORE")
+    tf.paragraphs[0].font.size = Pt(SIZES["body"])
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = rgb("danger")
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+    # Before content
+    before_content = slide.shapes.add_textbox(
+        Inches(0.7), Inches(box_top + 0.9),
+        Inches(half_width - 0.4), Inches(box_height - 1.2)
+    )
+    tf = before_content.text_frame
+    tf.word_wrap = True
+    for i, line in enumerate(data["before_items"]):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.text = f"✗ {line}"
+        p.font.size = Pt(SIZES["body"] - 2)
+        p.font.color.rgb = rgb("text_dark")
+        p.space_before = Pt(8)
+
+    # AFTER side (right, green accent)
+    right_x = 0.5 + half_width + 0.5
+    after_bg = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(right_x), Inches(box_top),
+        Inches(half_width), Inches(box_height)
+    )
+    after_bg.fill.solid()
+    after_bg.fill.fore_color.rgb = rgb("code_bg")
+    after_bg.line.color.rgb = rgb("success")
+    after_bg.line.width = Pt(3)
+
+    # After header
+    after_header = slide.shapes.add_textbox(
+        Inches(right_x), Inches(box_top + 0.2),
+        Inches(half_width), Inches(0.6)
+    )
+    tf = after_header.text_frame
+    tf.paragraphs[0].text = data.get("after_title", "AFTER")
+    tf.paragraphs[0].font.size = Pt(SIZES["body"])
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = rgb("success")
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+    # After content
+    after_content = slide.shapes.add_textbox(
+        Inches(right_x + 0.2), Inches(box_top + 0.9),
+        Inches(half_width - 0.4), Inches(box_height - 1.2)
+    )
+    tf = after_content.text_frame
+    tf.word_wrap = True
+    for i, line in enumerate(data["after_items"]):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.text = f"✓ {line}"
+        p.font.size = Pt(SIZES["body"] - 2)
+        p.font.color.rgb = rgb("text_dark")
+        p.space_before = Pt(8)
+
+
+def add_convergence_slide(prs: Presentation, data: dict) -> None:
+    """Add a slide showing multiple paths converging to one point.
+
+    Sources can be:
+    - Simple strings: ["Voyager", "LangGraph"]
+    - Dicts with optional images: [{"label": "Voyager", "image": "voyager.png"}]
+    """
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    add_slide_title(slide, data["title"])
+
+    # Source boxes on the left - compact vertical layout
+    sources = data["sources"]
+    num_sources = len(sources)
+    source_width = 3.0
+    source_height = 0.9  # Compact to fit all sources
+    source_x = 1.0
+    start_y = 1.6
+    spacing = 1.15  # Tighter spacing for better arrow alignment
+
+    # Get images directory
+    images_dir = Path(__file__).parent / "images"
+
+    source_positions = []
+    for i, source in enumerate(sources):
+        # Handle both string and dict formats
+        if isinstance(source, dict):
+            label = source.get("label", "")
+            image_file = source.get("image")
+        else:
+            label = source
+            image_file = None
+
+        y = start_y + (i * spacing)
+
+        # Add background box
+        box = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(source_x), Inches(y),
+            Inches(source_width), Inches(source_height)
+        )
+        box.fill.solid()
+        box.fill.fore_color.rgb = rgb("code_bg")
+        box.line.color.rgb = rgb("text_light")
+
+        # Try to add image if specified
+        image_path = images_dir / image_file if image_file else None
+        if image_path and image_path.exists():
+            # Add image on left side of box
+            img_size = 0.55
+            try:
+                slide.shapes.add_picture(
+                    str(image_path),
+                    Inches(source_x + 0.2), Inches(y + (source_height - img_size) / 2),
+                    Inches(img_size), Inches(img_size)
+                )
+                # Text to the right of image
+                text_box = slide.shapes.add_textbox(
+                    Inches(source_x + 0.9), Inches(y + 0.1),
+                    Inches(source_width - 1.1), Inches(source_height - 0.2)
+                )
+            except Exception:
+                # Fall back to text-only if image fails
+                text_box = slide.shapes.add_textbox(
+                    Inches(source_x + 0.1), Inches(y + 0.1),
+                    Inches(source_width - 0.2), Inches(source_height - 0.2)
+                )
+        else:
+            # Text-only box (centered)
+            text_box = slide.shapes.add_textbox(
+                Inches(source_x + 0.1), Inches(y + 0.1),
+                Inches(source_width - 0.2), Inches(source_height - 0.2)
+            )
+
+        tf = text_box.text_frame
+        tf.paragraphs[0].text = label
+        tf.paragraphs[0].font.size = Pt(14)
+        tf.paragraphs[0].font.bold = True
+        tf.paragraphs[0].font.color.rgb = rgb("text_dark")
+        tf.paragraphs[0].alignment = PP_ALIGN.LEFT if image_path and image_path.exists() else PP_ALIGN.CENTER
+        tf.anchor = MSO_ANCHOR.MIDDLE
+
+        # Store right edge center point
+        source_positions.append((source_x + source_width, y + source_height / 2))
+
+    # Target box on the right - taller to receive all arrows
+    target_width = 3.5
+    target_height = 2.8  # Taller to span all arrow endpoints
+    target_x = 8.5
+    # Center target vertically with all sources
+    total_sources_height = (num_sources - 1) * spacing + source_height
+    middle_y = start_y + total_sources_height / 2
+    target_y = middle_y - target_height / 2
+
+    target_box = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(target_x), Inches(target_y),
+        Inches(target_width), Inches(target_height)
+    )
+    target_box.fill.solid()
+    target_box.fill.fore_color.rgb = rgb("primary")
+    target_box.line.fill.background()
+    tf = target_box.text_frame
+    tf.paragraphs[0].text = data["target"]
+    tf.paragraphs[0].font.size = Pt(18)
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = rgb("white")
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf.anchor = MSO_ANCHOR.MIDDLE
+
+    # Draw lines from each source to target left edge center
+    target_left_x = target_x
+    target_center_y = target_y + target_height / 2
+
+    for src_right_x, src_center_y in source_positions:
+        # Draw a line from source right edge to target left edge
+        # Using a thin rectangle as a "line"
+        line_start_x = src_right_x + 0.1
+        line_end_x = target_left_x - 0.1
+
+        # Calculate line angle
+        line_width = line_end_x - line_start_x
+
+        # Create arrow shape pointing right
+        arrow = slide.shapes.add_shape(
+            MSO_SHAPE.RIGHT_ARROW,
+            Inches(line_start_x),
+            Inches(src_center_y - 0.1),
+            Inches(line_width),
+            Inches(0.2)
+        )
+        arrow.fill.solid()
+        arrow.fill.fore_color.rgb = rgb("muted")
+        arrow.line.fill.background()
+
+    # Footer tagline - positioned below the content
+    if "footer" in data:
+        footer_box = slide.shapes.add_textbox(
+            Inches(0.5), Inches(6.6),
+            Inches(DIMS["width"] - 1), Inches(0.6)
+        )
+        tf = footer_box.text_frame
+        tf.paragraphs[0].text = data["footer"]
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.italic = True
+        tf.paragraphs[0].font.color.rgb = rgb("text_light")
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
 
 
 def add_closing_slide(prs: Presentation, data: dict) -> None:
@@ -494,6 +908,14 @@ def create_presentation() -> Path:
             add_code_slide(prs, slide_data)
         elif slide_type == "code_comparison":
             add_code_comparison_slide(prs, slide_data)
+        elif slide_type == "quote":
+            add_quote_slide(prs, slide_data)
+        elif slide_type == "comparison":
+            add_comparison_slide(prs, slide_data)
+        elif slide_type == "before_after":
+            add_before_after_slide(prs, slide_data)
+        elif slide_type == "convergence":
+            add_convergence_slide(prs, slide_data)
         elif slide_type == "closing":
             add_closing_slide(prs, slide_data)
 

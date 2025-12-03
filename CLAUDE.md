@@ -415,6 +415,59 @@ custom_tools_server = create_sdk_mcp_server(
 
 ---
 
+## Eat Your Own Cooking
+
+**Always prefer using lightning-agents' own agents and tools** to accomplish tasks rather than doing things manually. This validates the system and helps it grow.
+
+### Before Doing Work Manually
+
+1. **Check existing agents**: `lightning list` - is there an agent for this?
+2. **Check existing tools**: `lightning db list-tools` - is there a tool for this?
+3. **If not, propose creating one** - the system should grow to handle new use cases
+
+### Sub-Agent Pattern
+
+Agents can invoke other agents via `mcp__custom-tools__run_agent`:
+
+```
+tool_architect → registers tool spec
+    │
+    └── run_agent(agent_id="tool_implementer", prompt="...")
+            │
+            └── tool_implementer writes the Python code
+```
+
+This enables Voyager-style autonomous capability growth.
+
+### When to Create New Agents/Tools
+
+| Scenario | Action |
+|----------|--------|
+| Repetitive task with specific domain | Create a new agent via `lightning architect` |
+| Need a new capability for agents | Use `tool_architect` to design + implement |
+| Agent needs to delegate specialized work | Add `run_agent` tool and create sub-agent |
+| Complex workflow with multiple steps | Consider agent orchestration with sub-agents |
+
+### Examples
+
+```bash
+# Need to work on slides? Use the slide agents
+lightning run presentation_slide_writer "Add a new slide about X"
+lightning run slides_checker "Review the presentation for issues"
+
+# Need a new tool? Have tool_architect create it
+lightning run tool_architect "Create a tool that does X"
+
+# Need a new agent? Have architect create it
+lightning architect "An agent that specializes in Y"
+```
+
+### Key Principle
+
+**Don't do manually what an agent could do.** If no agent exists, create one. The system should become more capable over time through use.
+
+---
+
 ## References
 
 - [Claude Agent SDK Python](https://github.com/anthropics/claude-agent-sdk-python)

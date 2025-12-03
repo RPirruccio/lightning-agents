@@ -17,8 +17,13 @@ Usage:
 import argparse
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
+
+# Force unbuffered output for real-time streaming
+os.environ["PYTHONUNBUFFERED"] = "1"
+sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
 
 from .registry import AgentRegistry, get_default_db_path
 from .agent_factory import AgentDefinition

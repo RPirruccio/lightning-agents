@@ -14,6 +14,8 @@ COLORS = {
     "code_bg": "F8F9FA",       # Light gray for code blocks
     "success": "28A745",       # Green for "Instance Ready" boxes
     "white": "FFFFFF",         # Pure white for text on colored backgrounds
+    "danger": "DC3545",        # Red for warnings, "before" states
+    "muted": "6C757D",         # Muted gray for secondary elements
 }
 
 # Fonts

@@ -83,7 +83,17 @@ async def db_get_tool(args: dict) -> dict:
 )
 async def db_create_tool(args: dict) -> dict:
     """Register a new tool definition."""
+    import json as json_module
+
     tool_id = args["tool_id"]
+
+    # Parse parameters - SDK sends dict as JSON string due to MCP schema bug
+    parameters = args.get("parameters", {})
+    if isinstance(parameters, str):
+        try:
+            parameters = json_module.loads(parameters)
+        except json_module.JSONDecodeError:
+            parameters = {}
 
     # Build tool data from args
     tool_data = {
@@ -91,7 +101,7 @@ async def db_create_tool(args: dict) -> dict:
         "description": args["description"],
         "module": args["module"],
         "function": args["function"],
-        "parameters": args.get("parameters", {}),
+        "parameters": parameters,
         "mcp_server": args.get("mcp_server", "custom-tools"),
     }
 
@@ -148,6 +158,8 @@ async def db_create_tool(args: dict) -> dict:
 )
 async def db_update_tool(args: dict) -> dict:
     """Update an existing tool definition."""
+    import json as json_module
+
     tool_id = args["tool_id"]
 
     # Read current DB
@@ -175,7 +187,14 @@ async def db_update_tool(args: dict) -> dict:
     if "function" in args:
         existing["function"] = args["function"]
     if "parameters" in args:
-        existing["parameters"] = args["parameters"]
+        # Parse parameters - SDK sends dict as JSON string due to MCP schema bug
+        parameters = args["parameters"]
+        if isinstance(parameters, str):
+            try:
+                parameters = json_module.loads(parameters)
+            except json_module.JSONDecodeError:
+                parameters = {}
+        existing["parameters"] = parameters
     if "mcp_server" in args:
         existing["mcp_server"] = args["mcp_server"]
 

@@ -10,6 +10,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "httpx>=0.27.0",
     "python-pptx>=1.0.0",
+    "pdf2image>=1.17.0",
 ]
 
 [project.scripts]

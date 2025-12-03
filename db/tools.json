@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "schema": "lightning-agents/db/tools",
     "created_at": "2024-12-01T00:00:00Z",
-    "updated_at": "2024-12-01T00:00:00Z"
+    "updated_at": "2025-12-03T17:54:50.851496Z"
   },
   "tools": {
     "download_pdf": {
@@ -12,8 +12,16 @@
       "module": "lightning_agents.tools.download_pdf",
       "function": "download_pdf",
       "parameters": {
-        "url": {"type": "string", "description": "URL of the PDF to download", "required": true},
-        "filename": {"type": "string", "description": "Optional filename for the downloaded PDF", "required": false}
+        "url": {
+          "type": "string",
+          "description": "URL of the PDF to download",
+          "required": true
+        },
+        "filename": {
+          "type": "string",
+          "description": "Optional filename for the downloaded PDF",
+          "required": false
+        }
       },
       "mcp_server": "custom-tools",
       "created_at": "2024-12-01T00:00:00Z",
@@ -45,10 +53,26 @@
       "module": "lightning_agents.tools.presentation",
       "function": "add_slide",
       "parameters": {
-        "position": {"type": "integer", "description": "Index to insert at (0=first, -1=last)", "required": true},
-        "slide_type": {"type": "string", "description": "One of: title, bullets, code, code_comparison, diagram, closing", "required": true},
-        "title": {"type": "string", "description": "Slide title", "required": true},
-        "content": {"type": "object", "description": "Additional fields based on slide type", "required": false}
+        "position": {
+          "type": "integer",
+          "description": "Index to insert at (0=first, -1=last)",
+          "required": true
+        },
+        "slide_type": {
+          "type": "string",
+          "description": "One of: title, bullets, code, code_comparison, diagram, closing",
+          "required": true
+        },
+        "title": {
+          "type": "string",
+          "description": "Slide title",
+          "required": true
+        },
+        "content": {
+          "type": "object",
+          "description": "Additional fields based on slide type",
+          "required": false
+        }
       },
       "mcp_server": "custom-tools",
       "created_at": "2024-12-01T00:00:00Z",
@@ -60,8 +84,16 @@
       "module": "lightning_agents.tools.presentation",
       "function": "update_slide",
       "parameters": {
-        "index": {"type": "integer", "description": "Slide index (0-based)", "required": true},
-        "updates": {"type": "object", "description": "Dict of fields to update", "required": true}
+        "index": {
+          "type": "integer",
+          "description": "Slide index (0-based)",
+          "required": true
+        },
+        "updates": {
+          "type": "object",
+          "description": "Dict of fields to update",
+          "required": true
+        }
       },
       "mcp_server": "custom-tools",
       "created_at": "2024-12-01T00:00:00Z",
@@ -73,11 +105,73 @@
       "module": "lightning_agents.tools.presentation",
       "function": "delete_slide",
       "parameters": {
-        "index": {"type": "integer", "description": "Slide index (0-based)", "required": true}
+        "index": {
+          "type": "integer",
+          "description": "Slide index (0-based)",
+          "required": true
+        }
       },
       "mcp_server": "custom-tools",
       "created_at": "2024-12-01T00:00:00Z",
       "updated_at": "2024-12-01T00:00:00Z"
+    },
+    "find_icon": {
+      "name": "Find and Download Icon",
+      "description": "Search and download icons/logos from LobeHub's icon library (unpkg.com/@lobehub/icons-static-png). Supports light and dark mode variants. Downloads the icon to the presentation/images/ directory and returns the local file path. Available icons include: claude, langgraph, langchain, nvidia, openai, anthropic, huggingface, google, amazon, microsoft, github, python, javascript, typescript, react, and many more tech/AI brand icons.",
+      "module": "tools.find_icon",
+      "function": "find_icon",
+      "parameters": {
+        "icon_name": {
+          "type": "string",
+          "description": "Name of the icon to find (e.g., 'claude', 'openai', 'langchain', 'nvidia', 'langgraph', 'anthropic', 'huggingface'). Case-insensitive.",
+          "required": true
+        },
+        "mode": {
+          "type": "string",
+          "description": "Color mode variant - 'light' for light backgrounds or 'dark' for dark backgrounds. Defaults to 'dark'.",
+          "required": false
+        },
+        "size": {
+          "type": "string",
+          "description": "Icon size to download - '16', '32', '64', '128', or '256'. Defaults to '128'.",
+          "required": false
+        }
+      },
+      "mcp_server": "custom-tools",
+      "created_at": "2025-12-03T17:31:59.234243Z",
+      "updated_at": "2025-12-03T17:31:59.234582Z"
+    },
+    "hello_world": {
+      "name": "Hello World",
+      "description": "A simple test tool that returns 'Hello, World!' - useful for testing tool functionality.",
+      "module": "lightning_agents.tools.hello_world",
+      "function": "hello_world",
+      "parameters": {},
+      "mcp_server": "custom-tools",
+      "created_at": "2025-12-03T17:45:14.874429Z",
+      "updated_at": "2025-12-03T17:45:14.874747Z"
+    },
+    "extract_slide_images": {
+      "name": "Extract Slide Images",
+      "description": "Convert PDF pages to individual PNG images for per-slide analysis. Each page becomes slide_1.png, slide_2.png, etc. Uses pdf2image library (requires poppler). Returns list of paths to extracted slide images.",
+      "module": "lightning_agents.tools.extract_slide_images",
+      "function": "extract_slide_images",
+      "parameters": {
+        "pdf_path": {
+          "type": "string",
+          "description": "Path to the PDF file to extract slides from",
+          "required": true
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "Directory to save extracted slide images",
+          "required": false,
+          "default": "presentation/output/slides/"
+        }
+      },
+      "mcp_server": "custom-tools",
+      "created_at": "2025-12-03T17:54:50.851138Z",
+      "updated_at": "2025-12-03T17:54:50.851488Z"
     }
   }
 }
