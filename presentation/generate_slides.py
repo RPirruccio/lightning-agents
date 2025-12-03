@@ -338,18 +338,45 @@ def add_code_comparison_slide(prs: Presentation, data: dict) -> None:
 
 
 def add_diagram_slide(prs: Presentation, data: dict) -> None:
-    """Add a slide with a flow diagram."""
+    """Add a slide with a flow diagram.
+
+    Supports:
+    - Regular and large boxes (large: True makes box 1.5x size)
+    - Subtitles below box labels
+    - Database-style boxes (is_database: True)
+    - Arrow labels (arrow_labels list)
+    - Feedback loops (feedback_loop dict)
+    - Footer annotations
+    """
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     add_slide_title(slide, data["title"])
 
     diagram = DIAGRAMS[data["diagram_id"]]
-    box_width = 2.2
-    box_height = 1.4
+    default_box_width = 2.2
+    default_box_height = 1.4
+    large_box_width = 3.3  # 1.5x larger
+    large_box_height = 2.0
+
+    # Store box dimensions for arrow calculations
+    box_dims = []
 
     # Draw boxes
     for box in diagram["boxes"]:
+        is_large = box.get("large", False)
+        is_database = box.get("is_database", False)
+        box_width = large_box_width if is_large else default_box_width
+        box_height = large_box_height if is_large else default_box_height
+
+        box_dims.append({"width": box_width, "height": box_height})
+
+        # Choose shape based on type
+        if is_database:
+            shape_type = MSO_SHAPE.FLOWCHART_DOCUMENT
+        else:
+            shape_type = MSO_SHAPE.ROUNDED_RECTANGLE
+
         shape = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
+            shape_type,
             Inches(box["x"]), Inches(box["y"]),
             Inches(box_width), Inches(box_height)
         )
@@ -360,15 +387,28 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
         # Text in box
         tf = shape.text_frame
         tf.paragraphs[0].text = box["label"]
-        tf.paragraphs[0].font.size = Pt(16)
+        tf.paragraphs[0].font.size = Pt(18 if is_large else 16)
         tf.paragraphs[0].font.bold = True
         tf.paragraphs[0].font.color.rgb = rgb("white")
         tf.paragraphs[0].font.name = FONTS["body"]
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         tf.anchor = MSO_ANCHOR.MIDDLE
 
-        # Add description below box if present
-        if "desc" in box:
+        # Add subtitle below box if present
+        if "subtitle" in box:
+            subtitle_box = slide.shapes.add_textbox(
+                Inches(box["x"] - 0.3), Inches(box["y"] + box_height + 0.05),
+                Inches(box_width + 0.6), Inches(0.5)
+            )
+            tf = subtitle_box.text_frame
+            tf.paragraphs[0].text = box["subtitle"]
+            tf.paragraphs[0].font.size = Pt(11 if is_large else 10)
+            tf.paragraphs[0].font.color.rgb = rgb("secondary")
+            tf.paragraphs[0].font.name = FONTS["body"]
+            tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+        # Add description below box if present (legacy support)
+        elif "desc" in box:
             desc_box = slide.shapes.add_textbox(
                 Inches(box["x"] - 0.2), Inches(box["y"] + box_height + 0.1),
                 Inches(box_width + 0.4), Inches(0.5)
@@ -381,12 +421,14 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
             tf.paragraphs[0].alignment = PP_ALIGN.CENTER
 
     # Draw result box if present (for tool_architect_flow)
+    result_box_dims = None
     if "result_box" in diagram:
         rb = diagram["result_box"]
+        result_box_dims = {"width": default_box_width, "height": default_box_height}
         result_shape = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE,
             Inches(rb["x"]), Inches(rb["y"]),
-            Inches(box_width), Inches(box_height)
+            Inches(default_box_width), Inches(default_box_height)
         )
         result_shape.fill.solid()
         result_shape.fill.fore_color.rgb = rgb(rb["color"])
@@ -404,19 +446,35 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
         if "result_arrow" in diagram:
             src_idx = diagram["result_arrow"][0]
             src_box = diagram["boxes"][src_idx]
+            src_dims = box_dims[src_idx]
             arrow = slide.shapes.add_shape(
                 MSO_SHAPE.DOWN_ARROW,
-                Inches(src_box["x"] + 0.95),
-                Inches(src_box["y"] + box_height + 0.1),
+                Inches(src_box["x"] + src_dims["width"] / 2 - 0.15),
+                Inches(src_box["y"] + src_dims["height"] + 0.1),
                 Inches(0.3),
-                Inches(rb["y"] - src_box["y"] - box_height - 0.2)
+                Inches(rb["y"] - src_box["y"] - src_dims["height"] - 0.2)
             )
             arrow.fill.solid()
             arrow.fill.fore_color.rgb = rgb("text_light")
             arrow.line.fill.background()
 
-    # Draw arrows between boxes
+            # Add result arrow label if present
+            if "result_arrow_label" in diagram:
+                label_box = slide.shapes.add_textbox(
+                    Inches(src_box["x"] + src_dims["width"] / 2 + 0.2),
+                    Inches(src_box["y"] + src_dims["height"] + 0.3),
+                    Inches(1.5), Inches(0.4)
+                )
+                tf = label_box.text_frame
+                tf.paragraphs[0].text = diagram["result_arrow_label"]
+                tf.paragraphs[0].font.size = Pt(9)
+                tf.paragraphs[0].font.italic = True
+                tf.paragraphs[0].font.color.rgb = rgb("text_light")
+
+    # Draw arrows between boxes with optional labels
+    arrow_labels = diagram.get("arrow_labels", [])
     seen_arrows = set()
+    arrow_idx = 0
     for start_idx, end_idx in diagram["arrows"]:
         arrow_key = (start_idx, end_idx)
         if arrow_key in seen_arrows:
@@ -425,47 +483,142 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
 
         start_box = diagram["boxes"][start_idx]
         end_box = diagram["boxes"][end_idx]
+        start_dims = box_dims[start_idx]
+        end_dims = box_dims[end_idx]
 
         # Horizontal arrow
         if abs(start_box["y"] - end_box["y"]) < 0.5:
+            arrow_start_x = start_box["x"] + start_dims["width"] + 0.1
+            arrow_y = start_box["y"] + start_dims["height"] / 2 - 0.15
+            arrow_width = end_box["x"] - start_box["x"] - start_dims["width"] - 0.2
             arrow = slide.shapes.add_shape(
                 MSO_SHAPE.RIGHT_ARROW,
-                Inches(start_box["x"] + 2.3),
-                Inches(start_box["y"] + 0.55),
-                Inches(end_box["x"] - start_box["x"] - 2.5),
+                Inches(arrow_start_x),
+                Inches(arrow_y),
+                Inches(arrow_width),
                 Inches(0.3)
             )
+
+            # Add arrow label if present
+            if arrow_idx < len(arrow_labels):
+                label_box = slide.shapes.add_textbox(
+                    Inches(arrow_start_x + arrow_width / 2 - 0.5),
+                    Inches(arrow_y - 0.35),
+                    Inches(1.2), Inches(0.3)
+                )
+                tf = label_box.text_frame
+                tf.paragraphs[0].text = arrow_labels[arrow_idx]
+                tf.paragraphs[0].font.size = Pt(9)
+                tf.paragraphs[0].font.italic = True
+                tf.paragraphs[0].font.color.rgb = rgb("text_light")
+                tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         else:
             # Vertical arrow (down)
             arrow = slide.shapes.add_shape(
                 MSO_SHAPE.DOWN_ARROW,
-                Inches(start_box["x"] + 0.95),
-                Inches(start_box["y"] + 1.5),
+                Inches(start_box["x"] + start_dims["width"] / 2 - 0.15),
+                Inches(start_box["y"] + start_dims["height"] + 0.1),
                 Inches(0.3),
-                Inches(end_box["y"] - start_box["y"] - 1.6)
+                Inches(end_box["y"] - start_box["y"] - start_dims["height"] - 0.2)
             )
+
+            # Add arrow label if present (to the right of vertical arrow)
+            if arrow_idx < len(arrow_labels):
+                label_box = slide.shapes.add_textbox(
+                    Inches(start_box["x"] + start_dims["width"] / 2 + 0.2),
+                    Inches((start_box["y"] + start_dims["height"] + end_box["y"]) / 2 - 0.15),
+                    Inches(1.0), Inches(0.3)
+                )
+                tf = label_box.text_frame
+                tf.paragraphs[0].text = arrow_labels[arrow_idx]
+                tf.paragraphs[0].font.size = Pt(9)
+                tf.paragraphs[0].font.italic = True
+                tf.paragraphs[0].font.color.rgb = rgb("text_light")
 
         arrow.fill.solid()
         arrow.fill.fore_color.rgb = rgb("text_light")
         arrow.line.fill.background()
+        arrow_idx += 1
 
-    # Draw back arrow for self-modifying cycle (architect_flow)
-    if "back_arrow" in diagram:
-        ba = diagram["back_arrow"]
-        from_box = diagram["boxes"][ba["from"]]
-        to_box = diagram["boxes"][ba["to"]]
-        # Curved arrow from New Agent Definition down to Registry
-        # Draw as a down arrow from the definition box to registry
-        arrow = slide.shapes.add_shape(
-            MSO_SHAPE.DOWN_ARROW,
-            Inches(from_box["x"] + 0.95),
-            Inches(from_box["y"] + box_height + 0.1),
-            Inches(0.3),
-            Inches(to_box["y"] - from_box["y"] - box_height - 0.2)
+    # Draw feedback loop with curved arrow effect
+    if "feedback_loop" in diagram:
+        fl = diagram["feedback_loop"]
+        loop_color = fl.get("color", "secondary")
+
+        if fl.get("from_result"):
+            # Feedback from result box back to system (left side)
+            rb = diagram["result_box"]
+            # Draw curved arrow representation (U-shape using multiple arrows)
+            # Left arrow from result box
+            left_arrow = slide.shapes.add_shape(
+                MSO_SHAPE.CURVED_LEFT_ARROW,
+                Inches(rb["x"] - 0.8),
+                Inches(rb["y"] + 0.3),
+                Inches(0.7),
+                Inches(0.8)
+            )
+            left_arrow.fill.solid()
+            left_arrow.fill.fore_color.rgb = rgb(loop_color)
+            left_arrow.line.fill.background()
+
+            # Feedback label
+            feedback_label = slide.shapes.add_textbox(
+                Inches(rb["x"] - 2.2),
+                Inches(rb["y"] + 0.3),
+                Inches(1.4), Inches(0.8)
+            )
+            tf = feedback_label.text_frame
+            tf.paragraphs[0].text = fl["label"]
+            tf.paragraphs[0].font.size = Pt(10)
+            tf.paragraphs[0].font.bold = True
+            tf.paragraphs[0].font.color.rgb = rgb(loop_color)
+            tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+        else:
+            # Feedback from one box to another (architect_flow style)
+            from_box = diagram["boxes"][fl["from_idx"]]
+            to_box = diagram["boxes"][fl["to_idx"]]
+            from_dims = box_dims[fl["from_idx"]]
+            to_dims = box_dims[fl["to_idx"]]
+
+            # Draw a curved arrow from New Agent Instance back to Registry
+            # Use a U-turn arrow on the right side
+            curved_arrow = slide.shapes.add_shape(
+                MSO_SHAPE.U_TURN_ARROW,
+                Inches(from_box["x"] + from_dims["width"] + 0.1),
+                Inches(to_box["y"] + 0.2),
+                Inches(1.0),
+                Inches(from_box["y"] + from_dims["height"] - to_box["y"] - 0.1)
+            )
+            curved_arrow.fill.solid()
+            curved_arrow.fill.fore_color.rgb = rgb(loop_color)
+            curved_arrow.line.fill.background()
+
+            # Feedback label to the right of the curve
+            feedback_label = slide.shapes.add_textbox(
+                Inches(from_box["x"] + from_dims["width"] + 1.2),
+                Inches((from_box["y"] + to_box["y"]) / 2 + 0.3),
+                Inches(1.6), Inches(0.7)
+            )
+            tf = feedback_label.text_frame
+            tf.paragraphs[0].text = fl["label"]
+            tf.paragraphs[0].font.size = Pt(10)
+            tf.paragraphs[0].font.bold = True
+            tf.paragraphs[0].font.color.rgb = rgb(loop_color)
+            tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+    # Add footer annotation if present
+    if "footer" in diagram:
+        footer_box = slide.shapes.add_textbox(
+            Inches(0.5), Inches(6.5),
+            Inches(DIMS["width"] - 1), Inches(0.6)
         )
-        arrow.fill.solid()
-        arrow.fill.fore_color.rgb = rgb("secondary")
-        arrow.line.fill.background()
+        tf = footer_box.text_frame
+        tf.paragraphs[0].text = diagram["footer"]
+        tf.paragraphs[0].font.size = Pt(SIZES["body"])
+        tf.paragraphs[0].font.bold = True
+        tf.paragraphs[0].font.color.rgb = rgb("primary")
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
 
 
 def add_quote_slide(prs: Presentation, data: dict) -> None:
