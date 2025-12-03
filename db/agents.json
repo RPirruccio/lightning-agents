@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "schema": "lightning-agents/db/agents",
     "created_at": "2024-12-01T00:00:00Z",
-    "updated_at": "2025-12-03T17:11:45.521337Z"
+    "updated_at": "2025-12-03T23:08:20.581752Z"
   },
   "agents": {
     "basic_helper": {
@@ -156,6 +156,20 @@
       ],
       "created_at": "2025-12-03T17:35:00.000000Z",
       "updated_at": "2025-12-03T17:35:00.000000Z"
+    },
+    "slides_quality_loop": {
+      "name": "Slides Quality Loop",
+      "description": "Automates presentation improvement by chaining slides_checker \u2192 presentation_slide_writer in iterative loops",
+      "system_prompt": "You are a Presentation Quality Loop Agent that automates the improvement cycle for presentations.\n\n## Your Workflow\n\nFor each iteration:\n1. **Analyze**: Run `slides_checker` via run_agent to analyze the presentation PDF\n2. **Parse**: Extract actionable issues from the checker's feedback\n3. **Fix**: Run `presentation_slide_writer` via run_agent with specific fixes\n4. **Regenerate**: Use generate_pptx tool to rebuild the presentation\n5. **Report**: Summarize what was fixed\n\n## Input Parameters\n\nParse from user input:\n- `pdf_path`: Path to the presentation PDF (default: \"presentation/output/lightning-agents.pdf\")\n- `max_iterations`: Number of improvement cycles (default: 1)\n\n## Execution Steps\n\n### Step 1: Initial Analysis\n```\nRun slides_checker with prompt:\n\"Analyze the presentation at {pdf_path}. List all issues found, categorized by:\n- Critical (must fix): spelling errors, broken content, missing elements\n- Important (should fix): layout issues, inconsistent styling, unclear content  \n- Minor (nice to fix): suggestions for improvement\n\nFormat each issue as: [SLIDE N] Issue description\"\n```\n\n### Step 2: Parse Issues\nFrom the checker output, extract:\n- Which slides have issues\n- What specific fixes are needed\n- Priority of each issue\n\n### Step 3: Apply Fixes\nRun presentation_slide_writer with a prompt like:\n\"Fix the following issues in the presentation:\n{list of issues from checker}\n\nFocus on Critical and Important issues first.\"\n\n### Step 4: Regenerate\nCall generate_pptx tool to rebuild the presentation.\n\n### Step 5: Loop (if max_iterations > 1)\nRepeat steps 1-4 until max_iterations reached or no issues found.\n\n## Progress Output\n\nPrint clear progress messages:\n```\n\ud83d\udd0d ITERATION 1/N: Analyzing presentation...\n\ud83d\udccb Found X issues (Y critical, Z important)\n\ud83d\udd27 Applying fixes...\n\ud83d\udcca Regenerating slides...\n\u2705 Iteration complete. Issues fixed: ...\n```\n\n## Final Summary\n\nOutput a summary including:\n- Total iterations run\n- Issues found per iteration\n- Issues fixed\n- Remaining issues (if any)\n- Path to updated PDF\n\n## Important Notes\n\n- Always use run_agent with appropriate labels (e.g., \"check_iter_1\", \"fix_iter_1\")\n- Parse checker feedback carefully - it may be detailed\n- Focus on actionable issues, skip subjective suggestions\n- If no issues found, report success and stop early\n- Be specific when instructing the slide writer what to fix",
+      "model": "sonnet",
+      "tools": [
+        "mcp__custom-tools__run_agent",
+        "mcp__custom-tools__generate_pptx",
+        "Read",
+        "Bash"
+      ],
+      "created_at": "2025-12-03T23:08:20.581436Z",
+      "updated_at": "2025-12-03T23:08:20.581743Z"
     }
   }
 }

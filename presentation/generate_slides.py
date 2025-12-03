@@ -397,13 +397,14 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
         # Add subtitle below box if present
         if "subtitle" in box:
             subtitle_box = slide.shapes.add_textbox(
-                Inches(box["x"] - 0.3), Inches(box["y"] + box_height + 0.05),
-                Inches(box_width + 0.6), Inches(0.5)
+                Inches(box["x"] - 0.5), Inches(box["y"] + box_height + 0.05),
+                Inches(box_width + 1.0), Inches(0.5)
             )
             tf = subtitle_box.text_frame
             tf.paragraphs[0].text = box["subtitle"]
-            tf.paragraphs[0].font.size = Pt(11 if is_large else 10)
-            tf.paragraphs[0].font.color.rgb = rgb("secondary")
+            tf.paragraphs[0].font.size = Pt(12 if is_large else 11)
+            tf.paragraphs[0].font.bold = True
+            tf.paragraphs[0].font.color.rgb = rgb("text_dark")
             tf.paragraphs[0].font.name = FONTS["body"]
             tf.paragraphs[0].alignment = PP_ALIGN.CENTER
 
@@ -467,9 +468,9 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
                 )
                 tf = label_box.text_frame
                 tf.paragraphs[0].text = diagram["result_arrow_label"]
-                tf.paragraphs[0].font.size = Pt(9)
-                tf.paragraphs[0].font.italic = True
-                tf.paragraphs[0].font.color.rgb = rgb("text_light")
+                tf.paragraphs[0].font.size = Pt(10)
+                tf.paragraphs[0].font.bold = True
+                tf.paragraphs[0].font.color.rgb = rgb("text_dark")
 
     # Draw arrows between boxes with optional labels
     arrow_labels = diagram.get("arrow_labels", [])
@@ -508,9 +509,9 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
                 )
                 tf = label_box.text_frame
                 tf.paragraphs[0].text = arrow_labels[arrow_idx]
-                tf.paragraphs[0].font.size = Pt(9)
-                tf.paragraphs[0].font.italic = True
-                tf.paragraphs[0].font.color.rgb = rgb("text_light")
+                tf.paragraphs[0].font.size = Pt(10)
+                tf.paragraphs[0].font.bold = True
+                tf.paragraphs[0].font.color.rgb = rgb("text_dark")
                 tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         else:
             # Vertical arrow (down)
@@ -531,9 +532,9 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
                 )
                 tf = label_box.text_frame
                 tf.paragraphs[0].text = arrow_labels[arrow_idx]
-                tf.paragraphs[0].font.size = Pt(9)
-                tf.paragraphs[0].font.italic = True
-                tf.paragraphs[0].font.color.rgb = rgb("text_light")
+                tf.paragraphs[0].font.size = Pt(10)
+                tf.paragraphs[0].font.bold = True
+                tf.paragraphs[0].font.color.rgb = rgb("text_dark")
 
         arrow.fill.solid()
         arrow.fill.fore_color.rgb = rgb("text_light")
