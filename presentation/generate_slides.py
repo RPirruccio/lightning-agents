@@ -343,13 +343,15 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
     add_slide_title(slide, data["title"])
 
     diagram = DIAGRAMS[data["diagram_id"]]
+    box_width = 2.2
+    box_height = 1.4
 
     # Draw boxes
     for box in diagram["boxes"]:
         shape = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE,
             Inches(box["x"]), Inches(box["y"]),
-            Inches(2.2), Inches(1.4)
+            Inches(box_width), Inches(box_height)
         )
         shape.fill.solid()
         shape.fill.fore_color.rgb = rgb(box["color"])
@@ -365,8 +367,62 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         tf.anchor = MSO_ANCHOR.MIDDLE
 
+        # Add description below box if present
+        if "desc" in box:
+            desc_box = slide.shapes.add_textbox(
+                Inches(box["x"] - 0.2), Inches(box["y"] + box_height + 0.1),
+                Inches(box_width + 0.4), Inches(0.5)
+            )
+            tf = desc_box.text_frame
+            tf.paragraphs[0].text = box["desc"]
+            tf.paragraphs[0].font.size = Pt(10)
+            tf.paragraphs[0].font.color.rgb = rgb("text_light")
+            tf.paragraphs[0].font.name = FONTS["body"]
+            tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+    # Draw result box if present (for tool_architect_flow)
+    if "result_box" in diagram:
+        rb = diagram["result_box"]
+        result_shape = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(rb["x"]), Inches(rb["y"]),
+            Inches(box_width), Inches(box_height)
+        )
+        result_shape.fill.solid()
+        result_shape.fill.fore_color.rgb = rgb(rb["color"])
+        result_shape.line.color.rgb = rgb(rb["color"])
+        tf = result_shape.text_frame
+        tf.paragraphs[0].text = rb["label"]
+        tf.paragraphs[0].font.size = Pt(16)
+        tf.paragraphs[0].font.bold = True
+        tf.paragraphs[0].font.color.rgb = rgb("white")
+        tf.paragraphs[0].font.name = FONTS["body"]
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+        tf.anchor = MSO_ANCHOR.MIDDLE
+
+        # Draw arrow from last box down to result
+        if "result_arrow" in diagram:
+            src_idx = diagram["result_arrow"][0]
+            src_box = diagram["boxes"][src_idx]
+            arrow = slide.shapes.add_shape(
+                MSO_SHAPE.DOWN_ARROW,
+                Inches(src_box["x"] + 0.95),
+                Inches(src_box["y"] + box_height + 0.1),
+                Inches(0.3),
+                Inches(rb["y"] - src_box["y"] - box_height - 0.2)
+            )
+            arrow.fill.solid()
+            arrow.fill.fore_color.rgb = rgb("text_light")
+            arrow.line.fill.background()
+
     # Draw arrows between boxes
+    seen_arrows = set()
     for start_idx, end_idx in diagram["arrows"]:
+        arrow_key = (start_idx, end_idx)
+        if arrow_key in seen_arrows:
+            continue
+        seen_arrows.add(arrow_key)
+
         start_box = diagram["boxes"][start_idx]
         end_box = diagram["boxes"][end_idx]
 
@@ -391,6 +447,24 @@ def add_diagram_slide(prs: Presentation, data: dict) -> None:
 
         arrow.fill.solid()
         arrow.fill.fore_color.rgb = rgb("text_light")
+        arrow.line.fill.background()
+
+    # Draw back arrow for self-modifying cycle (architect_flow)
+    if "back_arrow" in diagram:
+        ba = diagram["back_arrow"]
+        from_box = diagram["boxes"][ba["from"]]
+        to_box = diagram["boxes"][ba["to"]]
+        # Curved arrow from New Agent Definition down to Registry
+        # Draw as a down arrow from the definition box to registry
+        arrow = slide.shapes.add_shape(
+            MSO_SHAPE.DOWN_ARROW,
+            Inches(from_box["x"] + 0.95),
+            Inches(from_box["y"] + box_height + 0.1),
+            Inches(0.3),
+            Inches(to_box["y"] - from_box["y"] - box_height - 0.2)
+        )
+        arrow.fill.solid()
+        arrow.fill.fore_color.rgb = rgb("secondary")
         arrow.line.fill.background()
 
 

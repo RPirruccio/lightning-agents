@@ -15,7 +15,7 @@ SLIDES = [
     },
     {
         "type": "before_after",
-        "title": "The Problem",
+        "title": "Before & After",
         "before_title": "TYPICAL AGENT CODE",
         "before_items": [
             "agent_v1.py, agent_v2.py, agent_final.py...",
@@ -114,14 +114,9 @@ SLIDES = [
         "diagram_id": "architect_flow",
     },
     {
-        "type": "bullets",
+        "type": "diagram",
         "title": "Introducing: The Tool Architect",
-        "bullets": [
-            "Agents can also design **NEW TOOLS**",
-            "`tool_architect` registers definitions in `db/tools.json`",
-            "`paper_researcher` searches papers **AND** downloads PDFs",
-            "`presentation_slide_writer` manipulates slides **directly**",
-        ],
+        "diagram_id": "tool_architect_flow",
     },
     {
         "type": "code",
@@ -156,7 +151,7 @@ $ lightning run presentation_slide_writer "List slides"
             "Built with `Claude Agent SDK` + `MCP`",
             "`github.com/aimug-org/austin_langchain`",
         ],
-        "footer": "github.com/RPirruccio/lightning-agents | aimug.org",
+        "footer": "github.com/RPirruccio/lightning-agents",
     },
 ]
 
@@ -164,10 +159,10 @@ $ lightning run presentation_slide_writer "List slides"
 DIAGRAMS = {
     "main_flow": {
         "boxes": [
-            {"label": "Definition\n(JSON)", "x": 1.5, "y": 3.2, "color": "primary"},
-            {"label": "Factory\n(Callable)", "x": 4.5, "y": 3.2, "color": "primary"},
-            {"label": "Registry\n(Unified)", "x": 7.5, "y": 3.2, "color": "secondary"},
-            {"label": "Instance\n(Ready)", "x": 10.5, "y": 3.2, "color": "success"},
+            {"label": "agents.json", "x": 1.5, "y": 2.6, "color": "primary", "desc": "Single source of truth"},
+            {"label": "Definition", "x": 4.5, "y": 2.6, "color": "primary", "desc": "JSON with prompt, model, tools"},
+            {"label": "Factory", "x": 7.5, "y": 2.6, "color": "secondary", "desc": "Creates configured instances"},
+            {"label": "Instance", "x": 10.5, "y": 2.6, "color": "success", "desc": "Ready to run with context"},
         ],
         "arrows": [(0, 1), (1, 2), (2, 3)],
     },
@@ -179,6 +174,18 @@ DIAGRAMS = {
             {"label": "Registry", "x": 5.0, "y": 4.8, "color": "primary"},
             {"label": "New Agent\nInstance", "x": 8.5, "y": 4.8, "color": "success"},
         ],
-        "arrows": [(0, 1), (1, 2), (2, 3), (3, 4)],
+        "arrows": [(0, 1), (1, 2), (2, 3), (3, 4), (2, 3)],
+        "back_arrow": {"from": 2, "to": 3},  # Definition back to Registry (self-modifying cycle)
+    },
+    "tool_architect_flow": {
+        "boxes": [
+            {"label": "Tool\nRequest", "x": 1.0, "y": 3.2, "color": "text_light"},
+            {"label": "tool_architect", "x": 4.0, "y": 3.2, "color": "secondary"},
+            {"label": "db/tools.json", "x": 7.0, "y": 3.2, "color": "primary"},
+            {"label": "tool_implementer", "x": 10.0, "y": 3.2, "color": "secondary"},
+        ],
+        "arrows": [(0, 1), (1, 2), (2, 3)],
+        "result_box": {"label": "New Tool\nAvailable", "x": 10.0, "y": 5.2, "color": "success"},
+        "result_arrow": (3, "result"),
     },
 }
