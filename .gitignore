@@ -22,5 +22,5 @@ downloads/
 logs/
 
 # Generated slide images
-presentation/output/slides_images/
+presentation/output/slide_images/
 presentation/output/slides/
