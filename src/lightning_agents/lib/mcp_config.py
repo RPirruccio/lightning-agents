@@ -43,7 +43,7 @@ def get_mcp_servers(tool_names: list[str]) -> dict:
     Returns:
         Dict of server_name -> config for needed servers
     """
-    from .tools import custom_tools_server
+    from .tool_loader import custom_tools_server
 
     result = {}
     needed_servers = set()

@@ -1,16 +1,14 @@
 """
-Database utilities - Shared functions for CRUD operations on filesystem.
+Database utilities - Shared functions for filesystem-based operations.
 """
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 
 def get_project_root() -> Path:
     """Get the project root directory."""
-    # Navigate from src/lightning_agents/tools/ to project root
+    # Navigate from src/lightning_agents/lib/ to project root
     return Path(__file__).parent.parent.parent.parent
 
 
@@ -22,36 +20,6 @@ def get_agents_base_path() -> Path:
 def get_skills_base_path() -> Path:
     """Get the path to .claude/skills/ directory."""
     return get_project_root() / ".claude" / "skills"
-
-
-def get_db_path() -> Path:
-    """Get the path to the db/ directory (for legacy/tools.json)."""
-    return get_project_root() / "db"
-
-
-def get_tools_db_path() -> Path:
-    """Get the path to db/tools.json."""
-    return get_db_path() / "tools.json"
-
-
-def get_skills_db_path() -> Path:
-    """Get the path to db/skills.json."""
-    return get_db_path() / "skills.json"
-
-
-def read_json_db(path: Path) -> dict[str, Any]:
-    """Read and parse a JSON database file."""
-    with open(path) as f:
-        return json.load(f)
-
-
-def write_json_db(path: Path, data: dict[str, Any]) -> None:
-    """Write data to a JSON database file, updating metadata timestamp."""
-    if "metadata" in data:
-        data["metadata"]["updated_at"] = get_timestamp()
-
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
 
 
 def get_timestamp() -> str:
@@ -81,20 +49,17 @@ def validate_agent_definition(agent_data: dict) -> tuple[bool, str | None]:
     return True, None
 
 
-def validate_tool_definition(tool_data: dict) -> tuple[bool, str | None]:
+def validate_skill_definition(skill_data: dict) -> tuple[bool, str | None]:
     """
-    Validate a tool definition has required fields.
+    Validate a skill definition has required fields.
 
     Returns:
         (is_valid, error_message)
     """
-    required = {"name", "description", "module", "function", "parameters"}
-    missing = required - set(tool_data.keys())
+    required = {"name", "description"}
+    missing = required - set(skill_data.keys())
 
     if missing:
         return False, f"Missing required fields: {missing}"
-
-    if not isinstance(tool_data.get("parameters"), dict):
-        return False, "Parameters must be a dictionary"
 
     return True, None

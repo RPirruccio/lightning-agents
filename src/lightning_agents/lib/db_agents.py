@@ -15,8 +15,8 @@ from .db_utils import (
     get_timestamp,
     validate_agent_definition,
 )
-from ..agent_parser import parse_agent_md
-from ..agent_writer import write_agent_md
+from .agent_parser import parse_agent_md
+from .agent_writer import write_agent_md
 
 
 def _list_agent_ids() -> list[str]:
@@ -42,7 +42,6 @@ def _load_agent(agent_id: str) -> dict | None:
 @tool("db_list_agents", "List all registered agents", {})
 async def db_list_agents(_args: dict) -> dict:
     """List all agents with their basic info."""
-    base = get_agents_base_path()
     result = []
 
     for agent_id in _list_agent_ids():

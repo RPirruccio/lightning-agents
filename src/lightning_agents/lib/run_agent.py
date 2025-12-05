@@ -31,17 +31,16 @@ async def run_agent(args: dict) -> dict:
         prompt: The prompt to send to the sub-agent
         label: Optional label to identify this sub-agent instance (e.g., "slide_3")
     """
-    from ..registry import AgentRegistry
-    from ..runner import run_agent_capture
-    from .db_utils import get_agents_db_path
+    from .registry import AgentRegistry
+    from .runner import run_agent_capture
 
     agent_id = args["agent_id"]
     prompt = args["prompt"]
     label = args.get("label", None)
 
-    # Load registry
+    # Load registry from filesystem
     try:
-        registry = AgentRegistry.from_json(get_agents_db_path())
+        registry = AgentRegistry.from_filesystem()
     except Exception as e:
         return {
             "content": [{"type": "text", "text": f"Failed to load agent registry: {e}"}],

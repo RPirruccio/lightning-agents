@@ -7,7 +7,6 @@ The registry is the "factory of factories":
 - Provides a unified interface for agent creation
 """
 
-import json
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
@@ -19,14 +18,10 @@ if TYPE_CHECKING:
     from claude_agent_sdk.types import AgentDefinition as SDKAgentDefinition
 
 
-def get_default_db_path() -> Path:
-    """Get the default path to db/agents.json."""
-    return Path(__file__).parent.parent.parent / "db" / "agents.json"
-
-
 def get_default_agents_path() -> Path:
     """Get the default path to .claude/agents/ directory."""
-    return Path(__file__).parent.parent.parent / ".claude" / "agents"
+    # Navigate from src/lightning_agents/lib/ to project root
+    return Path(__file__).parent.parent.parent.parent / ".claude" / "agents"
 
 
 class AgentRegistry:
@@ -88,20 +83,6 @@ class AgentRegistry:
             for agent_id in configured_ids
             if agent_id in self._definitions and agent_id != parent_agent_id
         }
-
-    @classmethod
-    def from_json(cls, path: str | Path) -> "AgentRegistry":
-        """Load registry from a JSON file (legacy)."""
-        registry = cls()
-
-        with open(path) as f:
-            data = json.load(f)
-
-        for agent_id, agent_data in data.get("agents", {}).items():
-            definition = AgentDefinition.from_dict(agent_data)
-            registry.register(agent_id, definition)
-
-        return registry
 
     @classmethod
     def from_filesystem(cls, base_path: Path | None = None) -> "AgentRegistry":

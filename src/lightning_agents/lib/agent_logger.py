@@ -25,7 +25,7 @@ class AgentLogger:
 
         # Set up log directory
         if log_dir is None:
-            log_dir = Path(__file__).parent.parent.parent / "logs"
+            log_dir = Path(__file__).parent.parent.parent.parent / "logs"
         log_dir.mkdir(exist_ok=True)
 
         # Create log file: logs/{agent_id}.log (overwrites on each run)

@@ -20,8 +20,7 @@ import sys
 os.environ["PYTHONUNBUFFERED"] = "1"
 sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
 
-from .registry import AgentRegistry
-from .runner import run_agent_by_id
+from .lib import AgentRegistry, run_agent_by_id
 
 
 

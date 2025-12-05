@@ -133,7 +133,7 @@ async def run_agent_capture(
     tool_count = 0
 
     # Set up log file for sub-agent
-    log_dir = Path(__file__).parent.parent.parent / "logs"
+    log_dir = Path(__file__).parent.parent.parent.parent / "logs"
     log_dir.mkdir(exist_ok=True)
     log_name = f"{agent_id}_sub_{label or 'unnamed'}.log"
     log_file = log_dir / log_name
