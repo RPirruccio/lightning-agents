@@ -1,5 +1,5 @@
 """
-Database utilities - Shared functions for CRUD operations on db/ files.
+Database utilities - Shared functions for CRUD operations on filesystem.
 """
 
 import json
@@ -8,20 +8,35 @@ from pathlib import Path
 from typing import Any
 
 
+def get_project_root() -> Path:
+    """Get the project root directory."""
+    # Navigate from src/lightning_agents/tools/ to project root
+    return Path(__file__).parent.parent.parent.parent
+
+
+def get_agents_base_path() -> Path:
+    """Get the path to .claude/agents/ directory."""
+    return get_project_root() / ".claude" / "agents"
+
+
+def get_skills_base_path() -> Path:
+    """Get the path to .claude/skills/ directory."""
+    return get_project_root() / ".claude" / "skills"
+
+
 def get_db_path() -> Path:
-    """Get the path to the db/ directory."""
-    # Navigate from src/lightning_agents/tools/ to project root db/
-    return Path(__file__).parent.parent.parent.parent / "db"
-
-
-def get_agents_db_path() -> Path:
-    """Get the path to db/agents.json."""
-    return get_db_path() / "agents.json"
+    """Get the path to the db/ directory (for legacy/tools.json)."""
+    return get_project_root() / "db"
 
 
 def get_tools_db_path() -> Path:
     """Get the path to db/tools.json."""
     return get_db_path() / "tools.json"
+
+
+def get_skills_db_path() -> Path:
+    """Get the path to db/skills.json."""
+    return get_db_path() / "skills.json"
 
 
 def read_json_db(path: Path) -> dict[str, Any]:

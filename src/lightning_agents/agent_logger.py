@@ -38,7 +38,7 @@ class AgentLogger:
         self._write_header()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, _exc_type, _exc_val, _exc_tb):
         """Context manager exit - close log file."""
         if self._file:
             self._file.close()

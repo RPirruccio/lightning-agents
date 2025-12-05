@@ -17,3 +17,10 @@ wheels/
 
 # Downloaded papers
 downloads/
+
+# Logs (regenerated on each run)
+logs/
+
+# Generated slide images
+presentation/output/slides_images/
+presentation/output/slides/
